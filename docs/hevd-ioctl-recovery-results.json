@@ -1,0 +1,563 @@
+{
+  "status": "success",
+  "truncated": false,
+  "cases": [
+    {
+      "code": "0x0022205f",
+      "device_type": 34,
+      "function": 2071,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x877c0",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "switch",
+          "site": "0x87654"
+        }
+      ]
+    },
+    {
+      "code": "0x00222063",
+      "device_type": 34,
+      "function": 2072,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x87790",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "switch",
+          "site": "0x87654"
+        }
+      ]
+    },
+    {
+      "code": "0x00222067",
+      "device_type": 34,
+      "function": 2073,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x87760",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "switch",
+          "site": "0x87654"
+        }
+      ]
+    },
+    {
+      "code": "0x0022206b",
+      "device_type": 34,
+      "function": 2074,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x87730",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "switch",
+          "site": "0x87654"
+        }
+      ]
+    },
+    {
+      "code": "0x0022206f",
+      "device_type": 34,
+      "function": 2075,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x87700",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "switch",
+          "site": "0x87654"
+        }
+      ]
+    },
+    {
+      "code": "0x00222073",
+      "device_type": 34,
+      "function": 2076,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x876d0",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "switch",
+          "site": "0x87654"
+        }
+      ]
+    },
+    {
+      "code": "0x0022205b",
+      "device_type": 34,
+      "function": 2070,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x87638",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x87478"
+        }
+      ]
+    },
+    {
+      "code": "0x0022203f",
+      "device_type": 34,
+      "function": 2063,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x87608",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x87484"
+        }
+      ]
+    },
+    {
+      "code": "0x00222043",
+      "device_type": 34,
+      "function": 2064,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x875d8",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x87490"
+        }
+      ]
+    },
+    {
+      "code": "0x00222047",
+      "device_type": 34,
+      "function": 2065,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x875a8",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x8749c"
+        }
+      ]
+    },
+    {
+      "code": "0x0022204b",
+      "device_type": 34,
+      "function": 2066,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x87578",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x874a8"
+        }
+      ]
+    },
+    {
+      "code": "0x0022204f",
+      "device_type": 34,
+      "function": 2067,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x87548",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x874b4"
+        }
+      ]
+    },
+    {
+      "code": "0x00222053",
+      "device_type": 34,
+      "function": 2068,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x87518",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x874c0"
+        }
+      ]
+    },
+    {
+      "code": "0x00222057",
+      "device_type": 34,
+      "function": 2069,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x874e8",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x874cc"
+        }
+      ]
+    },
+    {
+      "code": "0x0022203b",
+      "device_type": 34,
+      "function": 2062,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x8744c",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x870e0"
+        }
+      ]
+    },
+    {
+      "code": "0x00222023",
+      "device_type": 34,
+      "function": 2056,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x8741c",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x872d4"
+        }
+      ]
+    },
+    {
+      "code": "0x00222027",
+      "device_type": 34,
+      "function": 2057,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x873ec",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x872e0"
+        }
+      ]
+    },
+    {
+      "code": "0x0022202b",
+      "device_type": 34,
+      "function": 2058,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x873bc",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x872ec"
+        }
+      ]
+    },
+    {
+      "code": "0x0022202f",
+      "device_type": 34,
+      "function": 2059,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x8738c",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x872f8"
+        }
+      ]
+    },
+    {
+      "code": "0x00222033",
+      "device_type": 34,
+      "function": 2060,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x8735c",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x87304"
+        }
+      ]
+    },
+    {
+      "code": "0x00222037",
+      "device_type": 34,
+      "function": 2061,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x8732c",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x87310"
+        }
+      ]
+    },
+    {
+      "code": "0x0022201f",
+      "device_type": 34,
+      "function": 2055,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x872b8",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x870f8"
+        }
+      ]
+    },
+    {
+      "code": "0x00222003",
+      "device_type": 34,
+      "function": 2048,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x87288",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x87104"
+        }
+      ]
+    },
+    {
+      "code": "0x00222007",
+      "device_type": 34,
+      "function": 2049,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x87258",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x87110"
+        }
+      ]
+    },
+    {
+      "code": "0x0022200b",
+      "device_type": 34,
+      "function": 2050,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x87228",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x8711c"
+        }
+      ]
+    },
+    {
+      "code": "0x0022200f",
+      "device_type": 34,
+      "function": 2051,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x871f8",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x87128"
+        }
+      ]
+    },
+    {
+      "code": "0x00222013",
+      "device_type": 34,
+      "function": 2052,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x871c8",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x87134"
+        }
+      ]
+    },
+    {
+      "code": "0x00222017",
+      "device_type": 34,
+      "function": 2053,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x87198",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x87140"
+        }
+      ]
+    },
+    {
+      "code": "0x0022201b",
+      "device_type": 34,
+      "function": 2054,
+      "method": "neither",
+      "required_access": "any",
+      "dispatch_rva": "0x870a8",
+      "case_rva": "0x87168",
+      "in_size": null,
+      "out_size": null,
+      "evidence": [
+        {
+          "kind": "comparison",
+          "site": "0x8714c"
+        }
+      ]
+    }
+  ],
+  "unresolved": [],
+  "prerequisites": {
+    "provider": "database",
+    "architecture": "aarch64",
+    "validated_layouts": {
+      "_DRIVER_OBJECT": {
+        "Type": 0,
+        "Size": 2,
+        "DeviceObject": 8,
+        "Flags": 16,
+        "DriverStart": 24,
+        "DriverSize": 32,
+        "DriverSection": 40,
+        "DriverExtension": 48,
+        "DriverName": 56,
+        "HardwareDatabase": 72,
+        "FastIoDispatch": 80,
+        "DriverInit": 88,
+        "DriverStartIo": 96,
+        "DriverUnload": 104,
+        "MajorFunction": 112
+      },
+      "_IO_STACK_LOCATION": {
+        "MajorFunction": 0,
+        "MinorFunction": 1,
+        "Flags": 2,
+        "Control": 3,
+        "Parameters": 8,
+        "DeviceObject": 40,
+        "FileObject": 48,
+        "CompletionRoutine": 56,
+        "Context": 64
+      },
+      "_UNICODE_STRING": {
+        "Length": 0,
+        "MaximumLength": 2,
+        "Buffer": 8
+      },
+      "_IO_STACK_LOCATION.Parameters.DeviceIoControl": {
+        "IoControlCode": {
+          "offset": 24,
+          "size": 4
+        },
+        "InputBufferLength": {
+          "offset": 16,
+          "size": 4
+        },
+        "OutputBufferLength": {
+          "offset": 8,
+          "size": 4
+        }
+      }
+    },
+    "missing": []
+  },
+  "traversal": {
+    "enabled": false,
+    "depth": 2,
+    "function_limit": 128,
+    "visited": 0,
+    "truncated": false,
+    "paths": []
+  },
+  "limitation": "Probe sites record analysis coverage, not safe buffer handling or a vulnerability."
+}

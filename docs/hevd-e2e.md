@@ -52,24 +52,61 @@ A regression test covers both cases; the fixed code passed the live run.
 Selected structured outcomes are preserved in [hevd-e2e-results.json](hevd-e2e-results.json).
 The full local runner report also records each request, response and elapsed time.
 
-## Static analysis remains partial
+## Static analysis and IOCTL recovery
 
 The real adapter capture contains 108 functions. It recovered WDM major functions
 `0` and `2` at `0x87078`, and `14` at `0x870a8`, five sink imports, device characteristics
 `0x100`, and bounded dispatch-to-sink paths. The default traversal visited 57 functions
 and reported its depth boundary explicitly.
 
-IOCTL recovery returned no proven cases and an unresolved switch at `0x87654`.
+The initial IOCTL recovery returned no proven cases and an unresolved switch at `0x87654`.
 Binary Ninja rendered the input through `Parameters.Create` and an unnamed offset,
 so the adapter could not establish the required `DeviceIoControl.IoControlCode` input.
 The [real partial capture](../tests/fixtures/hevd-arm64-bn6-partial.json) and offline replay
 assert that limitation alongside the successful independent sections. An empty map is
-not evidence that this driver has no IOCTLs. Complete code-to-handler acceptance remains open.
+not evidence that this driver has no IOCTLs. The fix below resolves this build's case mapping;
+the earlier partial capture remains immutable as a historical regression fixture.
 
 The device opened successfully as the Parallels guest-exec account, SYSTEM, with desired
 access zero. That observation does not establish an unprivileged user's effective rights.
 No complete security-descriptor comparison, module unload/replacement, reconnect race,
 rebase, evidence undo, or mountmgr workflow was exercised in this run.
+
+## IOCTL recovery fix
+
+A subsequent read-only Binary Ninja run recovered **29 cases**, `0x00222003` through
+`0x00222073` in steps of four. The ordinary `ioctl_map` returned `success` with no
+unresolved cases, through both the adapter and the authenticated MCP server. All case
+addresses matched a separate check of the ARM64 comparison branches and their equality
+edges, including comparisons reconstructed by BN as a switch. The reference uses this
+binary's disassembly, not a published HEVD table or adapter-generated expectations.
+
+The input is a four-byte read at `_IO_STACK_LOCATION + 0x18` in this build. Its database
+layout places `Parameters` at `0x8` and `DeviceIoControl.IoControlCode` another `0x10`
+bytes inside it. The adapter now checks those actual offsets and widths against the
+read's base type. No hardcoded structure offset, rendered variable name or IOCTL constant
+is used to establish input identity. No type is imported or applied automatically.
+
+Union reinterpretation is restricted to callbacks registered exclusively for
+`IRP_MJ_DEVICE_CONTROL` or `IRP_MJ_INTERNAL_DEVICE_CONTROL`. Callbacks also registered for
+other major functions remain conservative until their paths can be distinguished.
+Ambiguous unions, missing/malformed layouts, wrong widths/base types and reassigned input
+aliases remain refused. Known member indices are respected instead of selecting the
+first overlapping union field.
+
+The [successful capture](../tests/fixtures/hevd-arm64-bn6-ioctls.json) pins the same
+original-file hash, architecture, PE/PDB identity and BN analysis version, with independent
+branch evidence for each expected code/case pair. A separate
+[typed-input capture](../tests/fixtures/inputs/hevd-ioctl-input.json) exercises the adapter's
+layout resolver offline. The original unresolved capture is retained. The suite has
+**70 passing tests**, including both captures, real input replay, pointer-width differences,
+missing layouts, mixed-major-function callbacks and ambiguous union selection.
+
+[Structured MCP results](hevd-ioctl-recovery-results.json) preserve the recovered map.
+All input/output sizes remain `null`, since no exact size was proved. The composite
+`driver_surface` still reports its intentional traversal depth boundary. Driver bytes and
+database types were unchanged. These are static mappings; no IOCTLs were executed, and
+the fix does not establish runtime coverage or general recovery for every driver/build.
 
 ## Repeat the live check
 

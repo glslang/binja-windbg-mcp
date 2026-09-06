@@ -456,11 +456,85 @@ def _field_path(node, depth=0):
         if value_type is None:
             return None
         try:
-            member = next(m for m in value_type.members if m.offset == node.offset)
-        except (AttributeError, StopIteration):
+            members = value_type.members
+            index = getattr(node, "member_index", None)
+            if index is not None:
+                if not 0 <= index < len(members):
+                    return None
+                member = members[index]
+                if member.offset != node.offset:
+                    return None
+            else:
+                matches = [member for member in members if member.offset == node.offset]
+                if len(matches) != 1:
+                    return None
+                member = matches[0]
+        except (AttributeError, IndexError):
             return None
         prefix = _field_path(source, depth + 1)
         return (prefix + "." if prefix else "") + member.name
+    return None
+
+
+IOCTL_LAYOUT = "_IO_STACK_LOCATION.Parameters.DeviceIoControl"
+IOCTL_FIELDS = ("IoControlCode", "InputBufferLength", "OutputBufferLength")
+
+
+def _member(value_type, name):
+    matches = [member for member in getattr(value_type, "members", []) if member.name == name]
+    if len(matches) != 1:
+        return None
+    member = matches[0]
+    if not 0 <= member.offset < member.offset + member.type.width <= value_type.width:
+        return None
+    return member
+
+
+def _ioctl_layout(stack_type):
+    """Read this view's actual layout, including architecture-specific union padding."""
+    parameters = _member(stack_type, "Parameters")
+    control = _member(parameters.type, "DeviceIoControl") if parameters else None
+    if control is None:
+        return {}
+    fields = {}
+    for name in IOCTL_FIELDS:
+        member = _member(control.type, name)
+        if member is None or member.type.width != 4:
+            continue
+        if getattr(getattr(member.type, "type_class", None), "name", "") != "IntegerTypeClass":
+            continue
+        fields[name] = {"offset": parameters.offset + control.offset + member.offset, "size": 4}
+    spans = [(field["offset"], field["offset"] + field["size"]) for field in fields.values()]
+    if any(a < d and c < b for i, (a, b) in enumerate(spans) for c, d in spans[i + 1 :]):
+        return {}
+    return fields
+
+
+def _ioctl_field_path(node, context):
+    """Interpret an exact typed read only in an established device-control dispatch."""
+    if context is None:
+        return None
+    stack_type, fields, pointer_size = context
+    offset, source = 0, node
+    for _ in range(12):
+        operation = _op(source)
+        if operation not in ("HLIL_STRUCT_FIELD", "HLIL_DEREF_FIELD") or source.offset < 0:
+            return None
+        offset += source.offset
+        if operation == "HLIL_DEREF_FIELD":
+            pointer = source.src.expr_type
+            if (
+                pointer is None
+                or getattr(getattr(pointer, "type_class", None), "name", "") != "PointerTypeClass"
+                or pointer.width != pointer_size
+                or pointer.target != stack_type
+            ):
+                return None
+            for name, field in fields.items():
+                if (offset, node.size) == (field["offset"], field["size"]):
+                    return "Parameters.DeviceIoControl." + name
+            return None
+        source = source.src
     return None
 
 
@@ -497,6 +571,12 @@ def capture_driver(view, budget, imports_only=False):
             missing.append(name)
         else:
             layouts[name] = members
+    stack_type = view.get_type_by_name("_IO_STACK_LOCATION")
+    ioctl_fields = _ioctl_layout(stack_type)
+    if "IoControlCode" in ioctl_fields:
+        layouts[IOCTL_LAYOUT] = ioctl_fields
+    else:
+        missing.append(IOCTL_LAYOUT)
     result = {
         "format_version": 1,
         "analysis_version": bn.core_version(),
@@ -544,10 +624,53 @@ def capture_driver(view, budget, imports_only=False):
                     ],
                 }
             )
+    # Union offsets have meaning only after the WDM device-control roots are established.
+    registrations = {}
+    for row in result["functions"]:
+        for registration in row.get("registrations", []):
+            callback = registration.get("callback_rva")
+            if callback:
+                registrations.setdefault(callback, set()).add(registration.get("major_function"))
+    # A shared create/control routine needs path-sensitive major-function proof first.
+    roots = {callback for callback, majors in registrations.items() if majors <= {14, 15}}
+    if "IoControlCode" in ioctl_fields:
+        context = (stack_type, ioctl_fields, view.address_size)
+        for index, row in enumerate(result["functions"]):
+            if row["rva"] not in roots:
+                continue
+            if (
+                sum(
+                    len(item.get(key, []))
+                    for item in result["functions"]
+                    for key in ("registrations", "control_cases", "calls", "unresolved")
+                )
+                >= 4096
+            ):
+                result["truncated"] = True
+                result["capture_stop"] = "function fact limit during typed IOCTL recovery"
+                break
+            try:
+                budget.check()
+                function = view.get_function_at(view.start + int(row["rva"], 16))
+                if function is not None:
+                    result["functions"][index] = _capture_function(
+                        view, function, layouts, budget, ioctl_context=context
+                    )
+            except (TimeoutError, InterruptedError) as error:
+                result["truncated"] = True
+                result["capture_stop"] = str(error)
+                break
+            except Exception as error:
+                row["unresolved"].append(
+                    {
+                        "reason": "typed IOCTL recovery unavailable",
+                        "error_type": type(error).__name__,
+                    }
+                )
     return result
 
 
-def _capture_function(view, function, layouts, budget):
+def _capture_function(view, function, layouts, budget, ioctl_context=None):
     row = {
         "rva": hex(function.start - view.start),
         "registrations": [],
@@ -559,7 +682,11 @@ def _capture_function(view, function, layouts, budget):
     if il is None:
         row["unresolved"].append({"reason": "HLIL unavailable", "function_rva": row["rva"]})
         return row
-    # SSA identity is preferable to a variable's user-controlled display name.
+
+    def field_path(node):
+        return _ioctl_field_path(node, ioctl_context) or _field_path(node)
+
+    # Track immutable initializations by identity, never by a user-controlled display name.
     inputs = set()
     from itertools import islice
 
@@ -570,7 +697,7 @@ def _capture_function(view, function, layouts, budget):
     for node in nodes:
         if (
             _op(node) == "HLIL_VAR_INIT"
-            and _field_path(node.src) == "Parameters.DeviceIoControl.IoControlCode"
+            and field_path(node.src) == "Parameters.DeviceIoControl.IoControlCode"
         ):
             inputs.add(node.dest.identifier)
 
@@ -579,7 +706,7 @@ def _capture_function(view, function, layouts, budget):
             inputs.discard(node.dest.var.identifier)
 
     def is_control(node):
-        return _field_path(node) == "Parameters.DeviceIoControl.IoControlCode" or (
+        return field_path(node) == "Parameters.DeviceIoControl.IoControlCode" or (
             _op(node) == "HLIL_VAR" and node.var.identifier in inputs
         )
 
@@ -646,7 +773,7 @@ def _capture_function(view, function, layouts, budget):
                         "code": constant & 0xFFFFFFFF,
                         "site": hex(target.address - view.start),
                         "evidence": [{"kind": "comparison", "site": site}]
-                        + _size_checks(target, view, budget),
+                        + _size_checks(target, view, budget, field_path),
                     }
                 )
         elif operation == "HLIL_SWITCH":
@@ -661,7 +788,7 @@ def _capture_function(view, function, layouts, budget):
                                     "code": code & 0xFFFFFFFF,
                                     "site": hex(case.body.address - view.start),
                                     "evidence": [{"kind": "switch", "site": site}]
-                                    + _size_checks(case.body, view, budget),
+                                    + _size_checks(case.body, view, budget, field_path),
                                 }
                             )
             else:
@@ -671,7 +798,7 @@ def _capture_function(view, function, layouts, budget):
     return row
 
 
-def _size_checks(node, view, budget):
+def _size_checks(node, view, budget, field_path=_field_path):
     checks = []
     for candidate in _walk(node, budget):
         if not _op(candidate).startswith("HLIL_CMP_"):
@@ -680,7 +807,7 @@ def _size_checks(node, view, budget):
             (candidate.left, candidate.right),
             (candidate.right, candidate.left),
         ):
-            path, value = _field_path(source), _constant(constant)
+            path, value = field_path(source), _constant(constant)
             if value is not None and path in (
                 "Parameters.DeviceIoControl.InputBufferLength",
                 "Parameters.DeviceIoControl.OutputBufferLength",

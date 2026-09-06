@@ -370,3 +370,190 @@ def test_selected_frame_survives_app_deactivation_without_guessing_between_windo
     active[0] = None
     contexts.clear()
     assert current_frame() is None
+
+
+def ioctl_types(pointer_size=8):
+    integer = N(width=4, type_class=N(name="IntegerTypeClass"))
+    control = N(
+        width=4 * pointer_size,
+        members=[
+            N(name=name, offset=index * pointer_size, type=integer)
+            for index, name in enumerate(
+                ("OutputBufferLength", "InputBufferLength", "IoControlCode")
+            )
+        ],
+    )
+    union = N(width=control.width, members=[N(name="DeviceIoControl", offset=0, type=control)])
+    return N(
+        width=64 + pointer_size, members=[N(name="Parameters", offset=pointer_size, type=union)]
+    )
+
+
+def ioctl_read(stack, offset, size=4, pointer_size=8):
+    pointer = N(target=stack, width=pointer_size, type_class=N(name="PointerTypeClass"))
+    base = node("HLIL_VAR", expr_type=pointer)
+    parameter_offset = pointer_size
+    parameters = node(
+        "HLIL_DEREF_FIELD", src=base, offset=parameter_offset, size=32, expr_type=None
+    )
+    return node("HLIL_STRUCT_FIELD", src=parameters, offset=offset - parameter_offset, size=size)
+
+
+def test_union_field_uses_member_index_and_refuses_ambiguous_or_invalid_indices():
+    union = N(members=[N(name="Create", offset=0), N(name="DeviceIoControl", offset=0)])
+    base = node("HLIL_VAR", expr_type=union)
+    assert _field_path(node("HLIL_STRUCT_FIELD", src=base, offset=0)) is None
+    assert (
+        _field_path(node("HLIL_STRUCT_FIELD", src=base, offset=0, member_index=1))
+        == "DeviceIoControl"
+    )
+    assert _field_path(node("HLIL_STRUCT_FIELD", src=base, offset=0, member_index=10)) is None
+    assert _field_path(node("HLIL_STRUCT_FIELD", src=base, offset=0, member_index=-1)) is None
+    assert _field_path(node("HLIL_STRUCT_FIELD", src=base, offset=4, member_index=1)) is None
+
+
+def test_typed_ioctl_reads_use_the_actual_architecture_layout_and_exact_width():
+    from binja_windbg_mcp.adapter import _ioctl_field_path, _ioctl_layout
+
+    for pointer_size in (4, 8):
+        stack = ioctl_types(pointer_size)
+        layout = _ioctl_layout(stack)
+        context = (stack, layout, pointer_size)
+        offset = 3 * pointer_size
+        read = ioctl_read(stack, offset, pointer_size=pointer_size)
+        assert _ioctl_field_path(read, context) == "Parameters.DeviceIoControl.IoControlCode"
+        assert _ioctl_field_path(read, None) is None
+        assert (
+            _ioctl_field_path(ioctl_read(stack, offset, size=8, pointer_size=pointer_size), context)
+            is None
+        )
+        assert (
+            _ioctl_field_path(ioctl_read(stack, offset + 1, pointer_size=pointer_size), context)
+            is None
+        )
+        assert (
+            _ioctl_field_path(ioctl_read(N(), offset, pointer_size=pointer_size), context) is None
+        )
+        assert _ioctl_field_path(read, (stack, layout, pointer_size * 2)) is None
+
+
+def test_missing_malformed_and_overlapping_ioctl_layouts_are_not_guessed():
+    from binja_windbg_mcp.adapter import _ioctl_layout
+
+    assert _ioctl_layout(None) == {}
+    stack = ioctl_types()
+    union = stack.members[0].type
+    union.members[0].name = "Create"
+    assert _ioctl_layout(stack) == {}
+    stack = ioctl_types()
+    fields = stack.members[0].type.members[0].type.members
+    fields[2].offset = fields[1].offset
+    assert _ioctl_layout(stack) == {}
+    fields[2].offset = 1000
+    assert "IoControlCode" not in _ioctl_layout(stack)
+
+
+def test_untyped_union_offsets_require_dispatch_context_and_immutable_alias():
+    from binja_windbg_mcp.adapter import _ioctl_layout
+
+    stack = ioctl_types()
+    source = ioctl_read(stack, 24)
+    check = node("HLIL_CMP_UGE", left=ioctl_read(stack, 16), right=constant(8))
+    variable = N(identifier=10)
+    init = node("HLIL_VAR_INIT", dest=variable, src=source)
+    alias = node("HLIL_VAR", var=variable)
+    comparison = node(
+        "HLIL_IF",
+        condition=node("HLIL_CMP_E", left=alias, right=constant(0x22E004)),
+        true=node("HLIL_BLOCK", address=0x1200, operands=[check]),
+        false=node("HLIL_BLOCK"),
+    )
+    function = N(start=0x1100, hlil=N(root=node("HLIL_BLOCK", operands=[init, comparison])))
+    view = N(start=0x1000)
+    context = (stack, _ioctl_layout(stack), 8)
+    assert not _capture_function(view, function, {}, Budget())["control_cases"]
+    result = _capture_function(view, function, {}, Budget(), ioctl_context=context)
+    assert [case["code"] for case in result["control_cases"]] == [0x22E004]
+    evidence = result["control_cases"][0]["evidence"][1]
+    assert evidence["field"] == "Parameters.DeviceIoControl.InputBufferLength"
+    assert evidence["kind"] == "conditional_size" and evidence["value"] == 8
+    function.hlil.root.operands.append(node("HLIL_ASSIGN", dest=alias, src=constant(1)))
+    assert not _capture_function(view, function, {}, Budget(), ioctl_context=context)[
+        "control_cases"
+    ]
+
+
+def test_real_hevd_union_read_replays_through_the_adapter():
+    import json
+    from pathlib import Path
+
+    from binja_windbg_mcp.adapter import _ioctl_field_path, _ioctl_layout
+
+    fixture = json.loads(
+        Path(__file__).with_name("fixtures").joinpath("inputs/hevd-ioctl-input.json").read_text()
+    )
+
+    def load_type(record):
+        return N(
+            width=record["width"],
+            type_class=N(name=record["class"] + "Class"),
+            members=[
+                N(name=member["name"], offset=member["offset"], type=load_type(member["type"]))
+                for member in record.get("members", [])
+            ],
+        )
+
+    stack = load_type(fixture["stack_type"])
+    read = fixture["read"]
+    assert read["base_matches"] and read["base_registered_name"] == "_IO_STACK_LOCATION"
+    layout = _ioctl_layout(stack)
+    assert layout == read["layout"]
+    pointer = N(width=read["pointer_size"], target=stack, type_class=N(name="PointerTypeClass"))
+    base = node(read["operations"][2], expr_type=pointer)
+    parameters = node(read["operations"][1], src=base, offset=read["offsets"][1])
+    source = node(
+        read["operations"][0], src=parameters, offset=read["offsets"][0], size=read["read_size"]
+    )
+    assert _ioctl_field_path(source, None) is None
+    assert _ioctl_field_path(source, (stack, layout, read["pointer_size"])) == (
+        "Parameters.DeviceIoControl.IoControlCode"
+    )
+
+
+def test_capture_reinterprets_union_offsets_only_for_registered_control_dispatches(monkeypatch):
+    import sys
+
+    from binja_windbg_mcp import adapter
+
+    stack = ioctl_types()
+    functions = [N(start=0x1000), N(start=0x1100), N(start=0x1200), N(start=0x1300)]
+    view = N(
+        start=0x1000,
+        entry_point=0x1000,
+        arch=N(name="aarch64"),
+        address_size=8,
+        functions=functions,
+        get_symbols=lambda: [],
+        get_type_by_name=lambda name: stack if name == "_IO_STACK_LOCATION" else None,
+        get_function_at=lambda address: next(f for f in functions if f.start == address),
+    )
+    monkeypatch.setitem(sys.modules, "binaryninja", N(core_version=lambda: "6.0.fixture"))
+    called = []
+
+    def capture(view, function, layouts, budget, ioctl_context=None):
+        called.append((function.start, ioctl_context is not None))
+        return {
+            "rva": hex(function.start - view.start),
+            "registrations": [
+                {"major_function": major, "callback_rva": rva}
+                for major, rva in [(14, "0x100"), (15, "0x200"), (0, "0x300"), (14, "0x300")]
+            ]
+            if function.start == 0x1000
+            else [],
+            "unresolved": [],
+        }
+
+    monkeypatch.setattr(adapter, "_capture_function", capture)
+    result = adapter.capture_driver(view, Budget())
+    assert len(result["functions"]) == 4
+    assert called == [(f.start, False) for f in functions] + [(0x1100, True), (0x1200, True)]

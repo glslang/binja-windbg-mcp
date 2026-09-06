@@ -50,3 +50,19 @@ def test_hevd_capture_preserves_partial_analysis_and_independent_sections():
     traversal = result["ioctl_map"]["traversal"]
     assert traversal["depth"] == 2 and traversal["visited"] == 57
     assert traversal["truncated"] and traversal["paths"]
+
+
+def test_current_hevd_fixture_recovers_all_reviewed_cases_without_inventing_sizes():
+    fixture = json.loads(
+        Path(__file__).with_name("fixtures").joinpath("hevd-arm64-bn6-ioctls.json").read_text()
+    )
+    result = ioctl_map(fixture["capture"], Budget())
+    assert result["status"] == "success" and result["unresolved"] == []
+    assert sorted(int(case["code"], 16) for case in result["cases"]) == list(
+        range(0x222003, 0x222074, 4)
+    )
+    assert all(case["in_size"] is None and case["out_size"] is None for case in result["cases"])
+    assert result["traversal"]["enabled"] is False
+    composite = driver_surface(fixture["capture"], Budget())
+    assert len(composite["ioctl_map"]["cases"]) == 29
+    assert composite["ioctl_map"]["traversal"]["truncated"]  # Same intentional depth boundary.

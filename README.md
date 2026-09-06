@@ -125,8 +125,9 @@ credentials, queries, or fragments are refused, and redirects are disabled. The 
 Binary Ninja MCP connection is configured separately in the host.
 
 The [live HEVD E2E test](docs/hevd-e2e.md) passed pairing, guarded actions, byte comparison
-and cursor following on the Windows ARM64 VM. Its real analysis capture remains partial
-for IOCTL recovery; the report and opt-in runner preserve that distinction.
+and cursor following on the Windows ARM64 VM. Static recovery now maps all 29 IOCTL cases
+in that identified HEVD build, checked against its disassembly; the report records the
+remaining traversal and runtime-coverage limits.
 
 ## Driver analysis and evidence
 
@@ -138,7 +139,11 @@ lowercase 64-bit hex; RVAs use unpadded lowercase hex.
 
 Driver recovery accepts named WDM MajorFunction registrations, control-code comparisons
 and resolved switches, including supported aliases. Unresolved KMDF registration and
-unsupported flow remain explicit. It never automatically applies NT types. Use native
+unsupported flow remain explicit. For WDM routines registered exclusively for device
+control, exact typed reads can be matched to the database's `DeviceIoControl` layout even
+when BN renders another union member. This requires matching offsets, widths and base
+type; mixed-major-function dispatches require additional path proof and are not reinterpreted.
+It never automatically applies NT types. Use native
 MCP or the UI to supply required types; relevant notifications invalidate cached captures.
 The version 1 sink inventory is in `binja_windbg_mcp/analysis.py`. Import presence alone
 does not establish reachability. IOCTL sizes stay null unless proven; conditional checks

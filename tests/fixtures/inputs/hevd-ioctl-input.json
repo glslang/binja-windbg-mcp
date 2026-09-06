@@ -1,0 +1,2082 @@
+{
+  "file_sha256": "8cd7546a42fe11308e512e54282c0d8b60f8c8774ec8823c5550ba5e53ac706e",
+  "analysis_version": "6.0.10601 Personal",
+  "architecture": "aarch64",
+  "stack_type": {
+    "class": "StructureType",
+    "width": 72,
+    "name": "struct _IO_STACK_LOCATION",
+    "registered_name": "struct _IO_STACK_LOCATION",
+    "members": [
+      {
+        "name": "MajorFunction",
+        "offset": 0,
+        "type": {
+          "class": "IntegerType",
+          "width": 1,
+          "name": "uint8_t",
+          "registered_name": "None",
+          "members": []
+        }
+      },
+      {
+        "name": "MinorFunction",
+        "offset": 1,
+        "type": {
+          "class": "IntegerType",
+          "width": 1,
+          "name": "uint8_t",
+          "registered_name": "None",
+          "members": []
+        }
+      },
+      {
+        "name": "Flags",
+        "offset": 2,
+        "type": {
+          "class": "IntegerType",
+          "width": 1,
+          "name": "uint8_t",
+          "registered_name": "None",
+          "members": []
+        }
+      },
+      {
+        "name": "Control",
+        "offset": 3,
+        "type": {
+          "class": "IntegerType",
+          "width": 1,
+          "name": "uint8_t",
+          "registered_name": "None",
+          "members": []
+        }
+      },
+      {
+        "name": "Parameters",
+        "offset": 8,
+        "type": {
+          "class": "StructureType",
+          "width": 32,
+          "name": "union",
+          "registered_name": "None",
+          "members": [
+            {
+              "name": "Create",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 32,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "SecurityContext",
+                    "offset": 0,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "struct _IO_SECURITY_CONTEXT*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "NamedTypeReferenceType",
+                        "width": 24,
+                        "name": "struct _IO_SECURITY_CONTEXT",
+                        "registered_name": "None"
+                      }
+                    }
+                  },
+                  {
+                    "name": "Options",
+                    "offset": 8,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "FileAttributes",
+                    "offset": 16,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 2,
+                      "name": "uint16_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "ShareAccess",
+                    "offset": 18,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 2,
+                      "name": "uint16_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "EaLength",
+                    "offset": 24,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "CreatePipe",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 32,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "SecurityContext",
+                    "offset": 0,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "struct _IO_SECURITY_CONTEXT*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "NamedTypeReferenceType",
+                        "width": 24,
+                        "name": "struct _IO_SECURITY_CONTEXT",
+                        "registered_name": "None"
+                      }
+                    }
+                  },
+                  {
+                    "name": "Options",
+                    "offset": 8,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "Reserved",
+                    "offset": 16,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 2,
+                      "name": "uint16_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "ShareAccess",
+                    "offset": 18,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 2,
+                      "name": "uint16_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "Parameters",
+                    "offset": 24,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "struct _NAMED_PIPE_CREATE_PARAMETERS*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "NamedTypeReferenceType",
+                        "width": 40,
+                        "name": "struct _NAMED_PIPE_CREATE_PARAMETERS",
+                        "registered_name": "None"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "CreateMailslot",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 32,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "SecurityContext",
+                    "offset": 0,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "struct _IO_SECURITY_CONTEXT*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "NamedTypeReferenceType",
+                        "width": 24,
+                        "name": "struct _IO_SECURITY_CONTEXT",
+                        "registered_name": "None"
+                      }
+                    }
+                  },
+                  {
+                    "name": "Options",
+                    "offset": 8,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "Reserved",
+                    "offset": 16,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 2,
+                      "name": "uint16_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "ShareAccess",
+                    "offset": 18,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 2,
+                      "name": "uint16_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "Parameters",
+                    "offset": 24,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "struct _MAILSLOT_CREATE_PARAMETERS*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "NamedTypeReferenceType",
+                        "width": 24,
+                        "name": "struct _MAILSLOT_CREATE_PARAMETERS",
+                        "registered_name": "None"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "Read",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 24,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "Length",
+                    "offset": 0,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "Key",
+                    "offset": 8,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "Flags",
+                    "offset": 12,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "ByteOffset",
+                    "offset": 16,
+                    "type": {
+                      "class": "NamedTypeReferenceType",
+                      "width": 8,
+                      "name": "union _LARGE_INTEGER",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "Write",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 24,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "Length",
+                    "offset": 0,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "Key",
+                    "offset": 8,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "Flags",
+                    "offset": 12,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "ByteOffset",
+                    "offset": 16,
+                    "type": {
+                      "class": "NamedTypeReferenceType",
+                      "width": 8,
+                      "name": "union _LARGE_INTEGER",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "QueryDirectory",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 32,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "Length",
+                    "offset": 0,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "FileName",
+                    "offset": 8,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "struct _UNICODE_STRING*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "NamedTypeReferenceType",
+                        "width": 16,
+                        "name": "struct _UNICODE_STRING",
+                        "registered_name": "None"
+                      }
+                    }
+                  },
+                  {
+                    "name": "FileInformationClass",
+                    "offset": 16,
+                    "type": {
+                      "class": "NamedTypeReferenceType",
+                      "width": 4,
+                      "name": "enum _FILE_INFORMATION_CLASS",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "FileIndex",
+                    "offset": 24,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "NotifyDirectory",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 16,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "Length",
+                    "offset": 0,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "CompletionFilter",
+                    "offset": 8,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "NotifyDirectoryEx",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 24,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "Length",
+                    "offset": 0,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "CompletionFilter",
+                    "offset": 8,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "DirectoryNotifyInformationClass",
+                    "offset": 16,
+                    "type": {
+                      "class": "NamedTypeReferenceType",
+                      "width": 4,
+                      "name": "enum _DIRECTORY_NOTIFY_INFORMATION_CLASS",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "QueryFile",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 16,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "Length",
+                    "offset": 0,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "FileInformationClass",
+                    "offset": 8,
+                    "type": {
+                      "class": "NamedTypeReferenceType",
+                      "width": 4,
+                      "name": "enum _FILE_INFORMATION_CLASS",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "SetFile",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 32,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "Length",
+                    "offset": 0,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "FileInformationClass",
+                    "offset": 8,
+                    "type": {
+                      "class": "NamedTypeReferenceType",
+                      "width": 4,
+                      "name": "enum _FILE_INFORMATION_CLASS",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "FileObject",
+                    "offset": 16,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "struct _FILE_OBJECT*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "NamedTypeReferenceType",
+                        "width": 216,
+                        "name": "struct _FILE_OBJECT",
+                        "registered_name": "None"
+                      }
+                    }
+                  },
+                  {
+                    "name": "__inner3",
+                    "offset": 24,
+                    "type": {
+                      "class": "StructureType",
+                      "width": 8,
+                      "name": "union",
+                      "registered_name": "None",
+                      "members": [
+                        {
+                          "name": "__inner0",
+                          "offset": 0,
+                          "type": {
+                            "class": "StructureType",
+                            "width": 2,
+                            "name": "struct",
+                            "registered_name": "None"
+                          }
+                        },
+                        {
+                          "name": "ClusterCount",
+                          "offset": 0,
+                          "type": {
+                            "class": "IntegerType",
+                            "width": 4,
+                            "name": "uint32_t",
+                            "registered_name": "None"
+                          }
+                        },
+                        {
+                          "name": "DeleteHandle",
+                          "offset": 0,
+                          "type": {
+                            "class": "PointerType",
+                            "width": 8,
+                            "name": "void*",
+                            "registered_name": "None"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "QueryEa",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 32,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "Length",
+                    "offset": 0,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "EaList",
+                    "offset": 8,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "void*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "VoidType",
+                        "width": 0,
+                        "name": "void",
+                        "registered_name": "None"
+                      }
+                    }
+                  },
+                  {
+                    "name": "EaListLength",
+                    "offset": 16,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "EaIndex",
+                    "offset": 24,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "SetEa",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 4,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "Length",
+                    "offset": 0,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "QueryVolume",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 16,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "Length",
+                    "offset": 0,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "FsInformationClass",
+                    "offset": 8,
+                    "type": {
+                      "class": "NamedTypeReferenceType",
+                      "width": 4,
+                      "name": "enum _FSINFOCLASS",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "SetVolume",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 16,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "Length",
+                    "offset": 0,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "FsInformationClass",
+                    "offset": 8,
+                    "type": {
+                      "class": "NamedTypeReferenceType",
+                      "width": 4,
+                      "name": "enum _FSINFOCLASS",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "FileSystemControl",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 32,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "OutputBufferLength",
+                    "offset": 0,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "InputBufferLength",
+                    "offset": 8,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "FsControlCode",
+                    "offset": 16,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "Type3InputBuffer",
+                    "offset": 24,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "void*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "VoidType",
+                        "width": 0,
+                        "name": "void",
+                        "registered_name": "None"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "LockControl",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 24,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "Length",
+                    "offset": 0,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "union _LARGE_INTEGER*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "NamedTypeReferenceType",
+                        "width": 8,
+                        "name": "union _LARGE_INTEGER",
+                        "registered_name": "None"
+                      }
+                    }
+                  },
+                  {
+                    "name": "Key",
+                    "offset": 8,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "ByteOffset",
+                    "offset": 16,
+                    "type": {
+                      "class": "NamedTypeReferenceType",
+                      "width": 8,
+                      "name": "union _LARGE_INTEGER",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "DeviceIoControl",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 32,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "OutputBufferLength",
+                    "offset": 0,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "InputBufferLength",
+                    "offset": 8,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "IoControlCode",
+                    "offset": 16,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "Type3InputBuffer",
+                    "offset": 24,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "void*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "VoidType",
+                        "width": 0,
+                        "name": "void",
+                        "registered_name": "None"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "QuerySecurity",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 16,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "SecurityInformation",
+                    "offset": 0,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "Length",
+                    "offset": 8,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "SetSecurity",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 16,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "SecurityInformation",
+                    "offset": 0,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "SecurityDescriptor",
+                    "offset": 8,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "void*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "VoidType",
+                        "width": 0,
+                        "name": "void",
+                        "registered_name": "None"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "MountVolume",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 24,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "Vpb",
+                    "offset": 0,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "struct _VPB*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "NamedTypeReferenceType",
+                        "width": 96,
+                        "name": "struct _VPB",
+                        "registered_name": "None"
+                      }
+                    }
+                  },
+                  {
+                    "name": "DeviceObject",
+                    "offset": 8,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "struct _DEVICE_OBJECT*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "NamedTypeReferenceType",
+                        "width": 336,
+                        "name": "struct _DEVICE_OBJECT",
+                        "registered_name": "None"
+                      }
+                    }
+                  },
+                  {
+                    "name": "OutputBufferLength",
+                    "offset": 16,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "VerifyVolume",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 16,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "Vpb",
+                    "offset": 0,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "struct _VPB*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "NamedTypeReferenceType",
+                        "width": 96,
+                        "name": "struct _VPB",
+                        "registered_name": "None"
+                      }
+                    }
+                  },
+                  {
+                    "name": "DeviceObject",
+                    "offset": 8,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "struct _DEVICE_OBJECT*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "NamedTypeReferenceType",
+                        "width": 336,
+                        "name": "struct _DEVICE_OBJECT",
+                        "registered_name": "None"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "Scsi",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 8,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "Srb",
+                    "offset": 0,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "struct _SCSI_REQUEST_BLOCK*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "NamedTypeReferenceType",
+                        "width": 0,
+                        "name": "struct _SCSI_REQUEST_BLOCK",
+                        "registered_name": "None"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "QueryQuota",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 32,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "Length",
+                    "offset": 0,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "StartSid",
+                    "offset": 8,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "void*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "VoidType",
+                        "width": 0,
+                        "name": "void",
+                        "registered_name": "None"
+                      }
+                    }
+                  },
+                  {
+                    "name": "SidList",
+                    "offset": 16,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "struct _FILE_GET_QUOTA_INFORMATION*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "NamedTypeReferenceType",
+                        "width": 0,
+                        "name": "struct _FILE_GET_QUOTA_INFORMATION",
+                        "registered_name": "None"
+                      }
+                    }
+                  },
+                  {
+                    "name": "SidListLength",
+                    "offset": 24,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "SetQuota",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 4,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "Length",
+                    "offset": 0,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "QueryDeviceRelations",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 4,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "Type",
+                    "offset": 0,
+                    "type": {
+                      "class": "NamedTypeReferenceType",
+                      "width": 4,
+                      "name": "enum _DEVICE_RELATION_TYPE",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "QueryInterface",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 32,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "InterfaceType",
+                    "offset": 0,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "struct _GUID const*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "NamedTypeReferenceType",
+                        "width": 16,
+                        "name": "struct _GUID const",
+                        "registered_name": "None"
+                      }
+                    }
+                  },
+                  {
+                    "name": "Size",
+                    "offset": 8,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 2,
+                      "name": "uint16_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "Version",
+                    "offset": 10,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 2,
+                      "name": "uint16_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "Interface",
+                    "offset": 16,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "struct _INTERFACE*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "NamedTypeReferenceType",
+                        "width": 32,
+                        "name": "struct _INTERFACE",
+                        "registered_name": "None"
+                      }
+                    }
+                  },
+                  {
+                    "name": "InterfaceSpecificData",
+                    "offset": 24,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "void*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "VoidType",
+                        "width": 0,
+                        "name": "void",
+                        "registered_name": "None"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "DeviceCapabilities",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 8,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "Capabilities",
+                    "offset": 0,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "struct _DEVICE_CAPABILITIES*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "NamedTypeReferenceType",
+                        "width": 64,
+                        "name": "struct _DEVICE_CAPABILITIES",
+                        "registered_name": "None"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "FilterResourceRequirements",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 8,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "IoResourceRequirementList",
+                    "offset": 0,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "struct _IO_RESOURCE_REQUIREMENTS_LIST*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "NamedTypeReferenceType",
+                        "width": 72,
+                        "name": "struct _IO_RESOURCE_REQUIREMENTS_LIST",
+                        "registered_name": "None"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "ReadWriteConfig",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 32,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "WhichSpace",
+                    "offset": 0,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "Buffer",
+                    "offset": 8,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "void*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "VoidType",
+                        "width": 0,
+                        "name": "void",
+                        "registered_name": "None"
+                      }
+                    }
+                  },
+                  {
+                    "name": "Offset",
+                    "offset": 16,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "Length",
+                    "offset": 24,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "SetLock",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 1,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "Lock",
+                    "offset": 0,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 1,
+                      "name": "uint8_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "QueryId",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 4,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "IdType",
+                    "offset": 0,
+                    "type": {
+                      "class": "NamedTypeReferenceType",
+                      "width": 4,
+                      "name": "enum BUS_QUERY_ID_TYPE",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "QueryDeviceText",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 16,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "DeviceTextType",
+                    "offset": 0,
+                    "type": {
+                      "class": "NamedTypeReferenceType",
+                      "width": 4,
+                      "name": "enum DEVICE_TEXT_TYPE",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "LocaleId",
+                    "offset": 8,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "UsageNotification",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 16,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "InPath",
+                    "offset": 0,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 1,
+                      "name": "uint8_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "Reserved",
+                    "offset": 1,
+                    "type": {
+                      "class": "ArrayType",
+                      "width": 3,
+                      "name": "uint8_t[0x3]",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "Type",
+                    "offset": 8,
+                    "type": {
+                      "class": "NamedTypeReferenceType",
+                      "width": 4,
+                      "name": "enum _DEVICE_USAGE_NOTIFICATION_TYPE",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "WaitWake",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 4,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "PowerState",
+                    "offset": 0,
+                    "type": {
+                      "class": "NamedTypeReferenceType",
+                      "width": 4,
+                      "name": "enum _SYSTEM_POWER_STATE",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "PowerSequence",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 8,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "PowerSequence",
+                    "offset": 0,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "struct _POWER_SEQUENCE*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "NamedTypeReferenceType",
+                        "width": 12,
+                        "name": "struct _POWER_SEQUENCE",
+                        "registered_name": "None"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "Power",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 32,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "__inner0",
+                    "offset": 0,
+                    "type": {
+                      "class": "StructureType",
+                      "width": 4,
+                      "name": "union",
+                      "registered_name": "None",
+                      "members": [
+                        {
+                          "name": "SystemContext",
+                          "offset": 0,
+                          "type": {
+                            "class": "IntegerType",
+                            "width": 4,
+                            "name": "uint32_t",
+                            "registered_name": "None"
+                          }
+                        },
+                        {
+                          "name": "SystemPowerStateContext",
+                          "offset": 0,
+                          "type": {
+                            "class": "NamedTypeReferenceType",
+                            "width": 4,
+                            "name": "struct _SYSTEM_POWER_STATE_CONTEXT",
+                            "registered_name": "None"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "name": "Type",
+                    "offset": 8,
+                    "type": {
+                      "class": "NamedTypeReferenceType",
+                      "width": 4,
+                      "name": "enum _POWER_STATE_TYPE",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "State",
+                    "offset": 16,
+                    "type": {
+                      "class": "NamedTypeReferenceType",
+                      "width": 4,
+                      "name": "union _POWER_STATE",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "ShutdownType",
+                    "offset": 24,
+                    "type": {
+                      "class": "NamedTypeReferenceType",
+                      "width": 4,
+                      "name": "enum POWER_ACTION",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "StartDevice",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 16,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "AllocatedResources",
+                    "offset": 0,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "struct _CM_RESOURCE_LIST*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "NamedTypeReferenceType",
+                        "width": 40,
+                        "name": "struct _CM_RESOURCE_LIST",
+                        "registered_name": "None"
+                      }
+                    }
+                  },
+                  {
+                    "name": "AllocatedResourcesTranslated",
+                    "offset": 8,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "struct _CM_RESOURCE_LIST*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "NamedTypeReferenceType",
+                        "width": 40,
+                        "name": "struct _CM_RESOURCE_LIST",
+                        "registered_name": "None"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "WMI",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 32,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "ProviderId",
+                    "offset": 0,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 8,
+                      "name": "uint64_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "DataPath",
+                    "offset": 8,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "void*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "VoidType",
+                        "width": 0,
+                        "name": "void",
+                        "registered_name": "None"
+                      }
+                    }
+                  },
+                  {
+                    "name": "BufferSize",
+                    "offset": 16,
+                    "type": {
+                      "class": "IntegerType",
+                      "width": 4,
+                      "name": "uint32_t",
+                      "registered_name": "None",
+                      "members": []
+                    }
+                  },
+                  {
+                    "name": "Buffer",
+                    "offset": 24,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "void*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "VoidType",
+                        "width": 0,
+                        "name": "void",
+                        "registered_name": "None"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "Others",
+              "offset": 0,
+              "type": {
+                "class": "StructureType",
+                "width": 32,
+                "name": "struct",
+                "registered_name": "None",
+                "members": [
+                  {
+                    "name": "Argument1",
+                    "offset": 0,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "void*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "VoidType",
+                        "width": 0,
+                        "name": "void",
+                        "registered_name": "None"
+                      }
+                    }
+                  },
+                  {
+                    "name": "Argument2",
+                    "offset": 8,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "void*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "VoidType",
+                        "width": 0,
+                        "name": "void",
+                        "registered_name": "None"
+                      }
+                    }
+                  },
+                  {
+                    "name": "Argument3",
+                    "offset": 16,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "void*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "VoidType",
+                        "width": 0,
+                        "name": "void",
+                        "registered_name": "None"
+                      }
+                    }
+                  },
+                  {
+                    "name": "Argument4",
+                    "offset": 24,
+                    "type": {
+                      "class": "PointerType",
+                      "width": 8,
+                      "name": "void*",
+                      "registered_name": "None",
+                      "members": [],
+                      "target": {
+                        "class": "VoidType",
+                        "width": 0,
+                        "name": "void",
+                        "registered_name": "None"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "DeviceObject",
+        "offset": 40,
+        "type": {
+          "class": "PointerType",
+          "width": 8,
+          "name": "struct _DEVICE_OBJECT*",
+          "registered_name": "None",
+          "members": [],
+          "target": {
+            "class": "NamedTypeReferenceType",
+            "width": 336,
+            "name": "struct _DEVICE_OBJECT",
+            "registered_name": "None",
+            "members": []
+          }
+        }
+      },
+      {
+        "name": "FileObject",
+        "offset": 48,
+        "type": {
+          "class": "PointerType",
+          "width": 8,
+          "name": "struct _FILE_OBJECT*",
+          "registered_name": "None",
+          "members": [],
+          "target": {
+            "class": "NamedTypeReferenceType",
+            "width": 216,
+            "name": "struct _FILE_OBJECT",
+            "registered_name": "None",
+            "members": []
+          }
+        }
+      },
+      {
+        "name": "CompletionRoutine",
+        "offset": 56,
+        "type": {
+          "class": "PointerType",
+          "width": 8,
+          "name": "int32_t (*)(struct _DEVICE_OBJECT*, struct _IRP*, void*)",
+          "registered_name": "None",
+          "members": [],
+          "target": {
+            "class": "FunctionType",
+            "width": 0,
+            "name": "int32_t(struct _DEVICE_OBJECT*, struct _IRP*, void*)",
+            "registered_name": "None",
+            "members": []
+          }
+        }
+      },
+      {
+        "name": "Context",
+        "offset": 64,
+        "type": {
+          "class": "PointerType",
+          "width": 8,
+          "name": "void*",
+          "registered_name": "None",
+          "members": [],
+          "target": {
+            "class": "VoidType",
+            "width": 0,
+            "name": "void",
+            "registered_name": "None",
+            "members": []
+          }
+        }
+      }
+    ]
+  },
+  "read": {
+    "layout": {
+      "IoControlCode": {
+        "offset": 24,
+        "size": 4
+      },
+      "InputBufferLength": {
+        "offset": 16,
+        "size": 4
+      },
+      "OutputBufferLength": {
+        "offset": 8,
+        "size": 4
+      }
+    },
+    "base_matches": true,
+    "pointer_size": 8,
+    "offsets": [
+      16,
+      8
+    ],
+    "read_size": 4,
+    "operations": [
+      "HLIL_STRUCT_FIELD",
+      "HLIL_DEREF_FIELD",
+      "HLIL_VAR"
+    ],
+    "base_registered_name": "_IO_STACK_LOCATION"
+  }
+}
