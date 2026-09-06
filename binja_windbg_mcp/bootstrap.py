@@ -104,21 +104,47 @@ class Plugin:
         self.setup_state = "stopped"
         self.requirements = Path(__file__).resolve().parents[1] / "requirements.txt"
         commands = (
-            ("Start", "Start the listener, installing missing dependencies if needed", self.start),
-            ("Stop", "Stop the listener and local pairing", self.stop),
-            ("Status", "Show listener and dependency setup state", self.status),
+            (
+                "Start",
+                "Start the listener, installing missing dependencies if needed",
+                self.start,
+                self.can_start,
+            ),
+            ("Stop", "Stop the listener and local pairing", self.stop, self.can_stop),
+            ("Status", "Show listener and dependency setup state", self.status, None),
             (
                 "Connection Information",
                 "Show the endpoint and credential file location",
                 self.connection,
+                None,
             ),
         )
-        for name, description, callback in commands:
-            bn.PluginCommand.register_global("WinDbg MCP\\" + name, description, callback)
+        for name, description, callback, is_valid in commands:
+            bn.PluginCommand.register_global("WinDbg MCP\\" + name, description, callback, is_valid)
 
     @property
     def state(self):
         return self.listener.state if self.listener else self.setup_state
+
+    def can_start(self):
+        if self.job or self.restart_required:
+            return False
+        if sys.version_info[:2] != (3, 13) or self.bn.core_version_info().build < 10601:
+            return False
+        # A stopped/failed state can precede the network thread's final cleanup.
+        return not (self.listener and self.listener.thread and self.listener.thread.is_alive())
+
+    def can_stop(self):
+        if not self.want_start:
+            return False
+        if self.job:
+            return True
+        return bool(
+            self.listener
+            and self.listener.thread
+            and self.listener.thread.is_alive()
+            and self.listener.state in {"starting", "listening"}
+        )
 
     def start(self):
         self.want_start = True

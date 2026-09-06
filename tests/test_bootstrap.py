@@ -80,9 +80,13 @@ def test_native_install_uses_registered_provider_core_entry_point(monkeypatch):
 class FakeBN:
     def __init__(self):
         self.commands, self.tasks, self.pending, self.logs = {}, [], [], []
-        self.PluginCommand = N(
-            register_global=lambda name, _, callback: self.commands.update({name: callback})
-        )
+        self.enabled = {}
+
+        def register_global(name, description, callback, is_valid=None):
+            self.commands[name] = callback
+            self.enabled[name] = is_valid or (lambda: True)
+
+        self.PluginCommand = N(register_global=register_global)
         owner = self
 
         class Task:
@@ -222,3 +226,50 @@ def test_global_controls_execute_without_a_binary_view(tmp_path):
     bn.commands["WinDbg MCP\\Connection Information"]()
     assert "http://127.0.0.1:8766/mcp" in messages[-1][1]
     assert "profiles.json" in messages[-1][1]
+
+
+def test_controls_follow_dependency_setup_and_cancelled_start(monkeypatch):
+    bn = FakeBN()
+    plugin = bootstrap.Plugin(bn)
+    monkeypatch.setattr(bootstrap, "ensure_dependencies", lambda *args: None)
+    start = bn.enabled["WinDbg MCP\\Start"]
+    stop = bn.enabled["WinDbg MCP\\Stop"]
+    assert start() and not stop()
+    plugin.start()
+    assert not start() and stop()
+    plugin.stop()
+    assert not start() and not stop()  # Installer is still running; startup was cancelled.
+    bn.tasks[0].run()
+    bn.pending.pop(0)()
+    assert start() and not stop()
+    plugin.restart_required = True
+    assert not start() and not stop()
+    assert bn.enabled["WinDbg MCP\\Status"]()
+    assert bn.enabled["WinDbg MCP\\Connection Information"]()
+
+
+@pytest.mark.parametrize(
+    "state,alive,want_start,expected",
+    [
+        ("starting", True, True, (False, True)),
+        ("listening", True, True, (False, True)),
+        ("starting", True, False, (False, False)),
+        ("stopping", True, False, (False, False)),
+        ("stopped", True, False, (False, False)),
+        ("stopped", False, False, (True, False)),
+        ("startup failed: loopback port unavailable", False, True, (True, False)),
+        ("listener failed; check dependencies and restart", True, True, (False, False)),
+        ("listener failed; check dependencies and restart", False, True, (True, False)),
+    ],
+)
+def test_controls_follow_listener_lifecycle(state, alive, want_start, expected):
+    bn = FakeBN()
+    plugin = bootstrap.Plugin(bn)
+    plugin.listener = N(state=state, thread=N(is_alive=lambda: alive))
+    plugin.want_start = want_start
+    assert (
+        bn.enabled["WinDbg MCP\\Start"](),
+        bn.enabled["WinDbg MCP\\Stop"](),
+    ) == expected
+    assert bn.enabled["WinDbg MCP\\Status"]()
+    assert bn.enabled["WinDbg MCP\\Connection Information"]()

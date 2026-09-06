@@ -41,7 +41,10 @@ Resolve shared-package conflicts in the Extension Manager or with the **Install 
 module** command-palette action, then restart. A Python 3.10 package directory from version 0.1 is not reused by 3.13.
 
 The companion autostarts at `http://127.0.0.1:8766/mcp`. The **WinDbg MCP** menu provides
-Start, Stop, Status, and Connection Information even when no binary is open. Port collisions are visible startup
+Start, Stop, Status, and Connection Information even when no binary is open. Start is
+enabled when stopped or ready to retry a failure; Stop is enabled during startup or while
+running. Both are disabled while shutdown finishes or a dependency update requires a
+restart. Status and Connection Information remain available. Port collisions are visible startup
 failures. Stop is asynchronous; Start works after Status reports stopped. Only `/mcp`
 is served. Native Binary Ninja MCP is a separate server, normally on port `24642`.
 
