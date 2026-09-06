@@ -14,6 +14,9 @@ from binja_windbg_mcp.server import Listener
 
 
 class Workspace:
+    def shutdown(self):
+        self.closed = True
+
     def list_binaries(self):
         return {"binaries": []}
 
@@ -84,3 +87,69 @@ def test_retired_profile_group_fails_before_binding_with_migration_guidance(tmp_
         listener.start()
     assert listener.thread is None
     assert "evidence" in listener.state
+
+
+def test_shutdown_closes_polling_and_releases_listener_port(tmp_path, monkeypatch):
+    import socket
+    import threading
+
+    from binja_windbg_mcp import server as module
+
+    polling = threading.Event()
+    closed = threading.Event()
+    original = module.make_server
+
+    def make_server(workspace, profiles):
+        server, pairing = original(workspace, profiles)
+
+        async def poll():
+            try:
+                polling.set()
+                await asyncio.Event().wait()
+            finally:
+                closed.set()
+
+        pairing.task = asyncio.create_task(poll())
+        return server, pairing
+
+    monkeypatch.setattr(module, "make_server", make_server)
+    workspace = Workspace()
+    listener = Listener(workspace, Profiles(tmp_path), port=0)
+    listener.start()
+    try:
+        assert polling.wait(2)
+    finally:
+        listener.shutdown()
+    assert workspace.closed
+    assert closed.is_set()
+    assert not listener.thread.is_alive()
+    assert listener.state == "stopped"
+    with socket.socket() as probe:
+        assert probe.connect_ex(("127.0.0.1", listener.port)) != 0
+
+
+def test_stop_before_http_setup_is_preserved(tmp_path, monkeypatch):
+    import threading
+
+    from binja_windbg_mcp import server as module
+
+    creating, proceed = threading.Event(), threading.Event()
+    original = module.make_server
+
+    def make_server(workspace, profiles):
+        creating.set()
+        assert proceed.wait(2)
+        return original(workspace, profiles)
+
+    monkeypatch.setattr(module, "make_server", make_server)
+    listener = Listener(Workspace(), Profiles(tmp_path), port=0)
+    listener.start()
+    try:
+        assert creating.wait(2)
+        listener.stop()
+        assert listener.state == "stopping"
+    finally:
+        proceed.set()
+        listener.thread.join(3)
+    assert not listener.thread.is_alive()
+    assert listener.state == "stopped"

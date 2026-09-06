@@ -1,5 +1,6 @@
 """Dependency setup and UI commands; imports only the standard library until ready."""
 
+import atexit
 import importlib
 import re
 import sys
@@ -101,6 +102,7 @@ class Plugin:
         self.job = None
         self.want_start = False
         self.restart_required = False
+        self.shutting_down = False
         self.setup_state = "stopped"
         self.requirements = Path(__file__).resolve().parents[1] / "requirements.txt"
         commands = (
@@ -127,7 +129,7 @@ class Plugin:
         return self.listener.state if self.listener else self.setup_state
 
     def can_start(self):
-        if self.job or self.restart_required:
+        if self.shutting_down or self.job or self.restart_required:
             return False
         if sys.version_info[:2] != (3, 13) or self.bn.core_version_info().build < 10601:
             return False
@@ -135,7 +137,7 @@ class Plugin:
         return not (self.listener and self.listener.thread and self.listener.thread.is_alive())
 
     def can_stop(self):
-        if not self.want_start:
+        if self.shutting_down or not self.want_start:
             return False
         if self.job:
             return True
@@ -147,6 +149,8 @@ class Plugin:
         )
 
     def start(self):
+        if self.shutting_down:
+            return
         self.want_start = True
         if self.listener:
             try:
@@ -183,13 +187,16 @@ class Plugin:
                     error = DependencyError(
                         f"Dependency setup failed ({type(exc).__name__}); use Start to retry"
                     )
-                owner.bn.execute_on_main_thread(lambda: owner._setup_finished(error))
+                if not owner.shutting_down:
+                    owner.bn.execute_on_main_thread(lambda: owner._setup_finished(error))
 
         self.job = Setup("WinDbg MCP: checking/installing Python dependencies", False)
         self.job.start()
 
     def _setup_finished(self, error):
         self.job = None
+        if self.shutting_down:
+            return
         if error:
             self.restart_required = isinstance(error, RestartRequired)
             self.setup_state = str(error)
@@ -215,6 +222,24 @@ class Plugin:
             self.bn.log_error("WinDbg MCP: " + self.setup_state)
             return
         self.start()
+
+    def attach_shutdown_hooks(self):
+        from PySide6.QtCore import QCoreApplication
+
+        application = QCoreApplication.instance()
+        if application is None:
+            raise RuntimeError("Binary Ninja's application is unavailable")
+        application.aboutToQuit.connect(self.shutdown)
+        atexit.register(self.shutdown)
+
+    def shutdown(self):
+        if self.shutting_down:
+            return
+        self.shutting_down = True
+        self.want_start = False
+        self.setup_state = "stopped"
+        if self.listener:
+            self.listener.shutdown()
 
     def stop(self):
         self.want_start = False

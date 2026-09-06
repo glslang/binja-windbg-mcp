@@ -253,6 +253,10 @@ class Listener:
         self.state = "stopped"
         self._lock = threading.Lock()
         self._stop_requested = threading.Event()
+        self._loop = None
+        self.http = None
+        self._pairing = None
+        self._unpair_task = None
 
     def start(self):
         with self._lock:
@@ -273,6 +277,9 @@ class Listener:
                 raise
             self.port = sock.getsockname()[1]
             self._stop_requested.clear()
+            self.http = None
+            self._pairing = None
+            self._unpair_task = None
             self.state = "starting"
             self.thread = threading.Thread(
                 target=self._run, args=(sock,), name="binja-windbg-mcp", daemon=True
@@ -281,7 +288,9 @@ class Listener:
 
     def _run(self, sock):
         async def run():
+            self._loop = asyncio.get_running_loop()
             server, pairing = make_server(self.workspace, self.profiles)
+            self._pairing = pairing
             app = Authenticated(
                 server.streamable_http_app(json_response=True), self.profiles.token, self.port
             )
@@ -293,15 +302,20 @@ class Listener:
                     log_level="critical",
                     access_log=False,
                     lifespan="on",
+                    timeout_graceful_shutdown=1,
                 )
             )
             if self._stop_requested.is_set():
-                self.http.should_exit = True
-            self.state = "listening"
+                self._request_stop()
+            else:
+                self.state = "listening"
             try:
                 await self.http.serve(sockets=[sock])
             finally:
-                await pairing.unpair()
+                if self._unpair_task is not None:
+                    await self._unpair_task
+                else:
+                    await pairing.unpair()
 
         try:
             asyncio.run(run())
@@ -310,11 +324,30 @@ class Listener:
         else:
             self.state = "stopped"
         finally:
+            self._loop = None
             sock.close()
+
+    def _request_stop(self):
+        # Runs on the network loop. Close polling immediately, before draining requests.
+        if self.http is not None:
+            self.http.should_exit = True
+        if self._pairing is not None and self._unpair_task is None:
+            self._unpair_task = asyncio.create_task(self._pairing.unpair())
 
     def stop(self):
         self._stop_requested.set()
-        # Do not join from the UI thread: active jobs may be waiting for that thread.
-        if getattr(self, "http", None):
+        if self.thread and self.thread.is_alive():
             self.state = "stopping"
-            self.http.should_exit = True
+        loop = self._loop
+        if loop is not None:
+            try:
+                loop.call_soon_threadsafe(self._request_stop)
+            except RuntimeError:
+                pass  # The network loop has already closed.
+
+    def shutdown(self):
+        self.workspace.shutdown()
+        self.stop()
+        # Workspace shutdown releases workers waiting for the UI before this bounded join.
+        if self.thread and self.thread is not threading.current_thread():
+            self.thread.join(timeout=3)

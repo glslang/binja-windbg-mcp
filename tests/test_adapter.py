@@ -77,7 +77,7 @@ def test_duplicate_views_need_a_selected_binary_and_closed_views_are_refused(mon
 
     from binja_windbg_mcp import adapter
 
-    monkeypatch.setattr(adapter, "main_thread", lambda fn: fn())
+    monkeypatch.setattr(adapter, "main_thread", lambda fn, **kwargs: fn())
     workspace = Workspace()
     workspace._ids = {(1, "PE"): "one", (2, "PE"): "two"}
     rows = [((1, "PE"), object(), True, 0x1000), ((2, "PE"), object(), True, 0x1000)]
@@ -128,7 +128,7 @@ def test_explicit_binary_queries_ignore_shared_active_view_and_refresh_after_edi
     views = [N(start=0x1000, file=N(raw=N(read=None))), N(start=0x5000, file=N(raw=N(read=None)))]
     active = [0]
     calls = []
-    monkeypatch.setattr(adapter, "main_thread", lambda fn: fn())
+    monkeypatch.setattr(adapter, "main_thread", lambda fn, **kwargs: fn())
     monkeypatch.setattr(
         adapter, "pe_identity", lambda _: (Identity(timestamp=1, size=0x3000), "x86_64")
     )
@@ -166,7 +166,7 @@ def test_evidence_edit_is_pinned_and_rejects_stale_or_mismatched_provenance(monk
     from binja_windbg_mcp import adapter
     from binja_windbg_mcp.core import Coordinate, Identity
 
-    monkeypatch.setattr(adapter, "main_thread", lambda fn: fn())
+    monkeypatch.setattr(adapter, "main_thread", lambda fn, **kwargs: fn())
     identity = Identity(timestamp=1, size=0x3000)
     monkeypatch.setattr(adapter, "pe_identity", lambda _: (identity, "x86_64"))
     workspace = Workspace()
@@ -220,7 +220,7 @@ def test_metadata_uses_typed_analysis_state_property(monkeypatch):
     monkeypatch.setattr(
         adapter, "pe_identity", lambda _: (Identity(timestamp=1, size=0x3000), "x86_64")
     )
-    monkeypatch.setattr(adapter, "original_hash", lambda _: None)
+    monkeypatch.setattr(adapter, "original_hash", lambda _, **kwargs: None)
     workspace = Workspace()
     key = (1, "PE")
     workspace._ids[key] = "binary"
@@ -247,5 +247,103 @@ def test_idle_analysis_wait_completes_without_another_analysis_pass(monkeypatch)
     assert asyncio.run(workspace.wait_for_analysis("binary", timeout_ms=100)) == {
         "status": "success"
     }
+    assert cancelled == [True]
+    assert workspace._waiters[(1, "PE")] == []
+
+
+def test_shutdown_releases_ui_wait_and_discards_late_callback(monkeypatch):
+    import sys
+    import threading
+
+    from binja_windbg_mcp import adapter
+
+    queued, executed, errors = [], [], []
+    scheduled = threading.Event()
+    closing = threading.Event()
+
+    def schedule(callback):
+        queued.append(callback)
+        scheduled.set()
+
+    bn = N(is_main_thread=lambda: False, execute_on_main_thread=schedule)
+    monkeypatch.setitem(sys.modules, "binaryninja", bn)
+
+    def request():
+        try:
+            adapter.main_thread(lambda: executed.append(True), cancel=closing)
+        except InterruptedError as error:
+            errors.append(error)
+
+    worker = threading.Thread(target=request)
+    worker.start()
+    try:
+        assert scheduled.wait(1)
+    finally:
+        closing.set()
+        worker.join(1)
+    assert not worker.is_alive()
+    assert len(errors) == 1
+    queued[0]()  # Qt may dispatch an already queued request during teardown.
+    assert not executed
+
+
+def test_workspace_shutdown_cancels_active_analysis_and_clears_its_budget(monkeypatch):
+    import threading
+
+    workspace = Workspace()
+    started = threading.Event()
+    errors = []
+
+    def capture(name, binary_id, depth, function_limit, traverse, budget):
+        started.set()
+        budget.cancel.wait(2)
+        budget.check()
+
+    monkeypatch.setattr(workspace, "_query", capture)
+
+    def request():
+        try:
+            workspace.query("driver_surface", "binary")
+        except InterruptedError as error:
+            errors.append(error)
+
+    worker = threading.Thread(target=request)
+    worker.start()
+    try:
+        assert started.wait(1)
+    finally:
+        workspace.shutdown()
+        worker.join(1)
+    assert not worker.is_alive()
+    assert len(errors) == 1
+    assert not workspace._budgets
+
+
+def test_workspace_shutdown_cancels_analysis_completion_subscription(monkeypatch):
+    import asyncio
+
+    import pytest
+
+    workspace = Workspace()
+    subscribed, cancelled = [], []
+    view = N(analysis_state=N(name="AnalyzeState"))
+
+    def subscribe(callback):
+        subscribed.append(True)
+        return N(cancel=lambda: cancelled.append(True))
+
+    view.add_analysis_completion_event = subscribe
+    monkeypatch.setattr(workspace, "acquire", lambda _: ((1, "PE"), view, False, None))
+
+    async def run():
+        waiter = asyncio.create_task(workspace.wait_for_analysis("binary"))
+        async with asyncio.timeout(2):
+            while not subscribed:
+                await asyncio.sleep(0.01)
+            workspace.shutdown()
+            with pytest.raises(asyncio.CancelledError):
+                await waiter
+
+    asyncio.run(run())
     assert cancelled == [True]
     assert workspace._waiters[(1, "PE")] == []

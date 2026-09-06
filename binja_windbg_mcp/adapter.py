@@ -14,20 +14,32 @@ from . import analysis
 from .core import Budget, Coordinate, original_hash, pe_identity
 
 
-def main_thread(fn):
+def main_thread(fn, cancel=None):
     import binaryninja as bn
 
+    def check_open():
+        if cancel is not None and cancel.is_set():
+            raise InterruptedError("Binary Ninja is shutting down")
+
+    check_open()
     if bn.is_main_thread():
         return fn()
     result = []
+    finished = threading.Event()
 
     def run():
         try:
+            check_open()
             result.append((True, fn()))
         except Exception as error:
             result.append((False, error))
+        finally:
+            finished.set()
 
-    bn.execute_on_main_thread_and_wait(run)
+    bn.execute_on_main_thread(run)
+    # Application shutdown must release workers even after Qt stops dispatching.
+    while not finished.wait(0.05):
+        check_open()
     ok, value = result[0]
     if not ok:
         raise value
@@ -42,6 +54,25 @@ class Workspace:
         self._waiters = {}
         self._cache = {}
         self._lock = threading.RLock()
+        self._closing = threading.Event()
+        self._budgets = {}
+
+    def shutdown(self):
+        self._closing.set()
+        with self._lock:
+            for budget in self._budgets.values():
+                budget.cancel.set()
+            for waiting in self._waiters.values():
+                for loop, future in waiting:
+                    try:
+                        loop.call_soon_threadsafe(future.cancel)
+                    except RuntimeError:
+                        pass  # The network loop has already closed.
+            self._cache.clear()
+
+    def _check_open(self):
+        if self._closing.is_set():
+            raise InterruptedError("Binary Ninja is shutting down")
 
     def attach_ui_notifications(self):
         from binaryninjaui import UIContext, UIContextNotification
@@ -66,6 +97,8 @@ class Workspace:
             self._cache.clear()
 
     def _views(self):
+        if self._closing.is_set():
+            return []
         from binaryninjaui import FileContext, UIContext
 
         active = UIContext.activeContext()
@@ -157,7 +190,7 @@ class Workspace:
         self._notifications[key] = (event, weakref.ref(view))
 
     def acquire(self, binary_id):
-        views = main_thread(self._views)
+        views = main_thread(self._views, cancel=self._closing)
         candidates = (
             [v for v in views if self._ids[v[0]] == binary_id]
             if binary_id
@@ -173,6 +206,7 @@ class Workspace:
             return (self._ids.get(key), view.start, self._revision.get(key, 0))
 
     def metadata(self, key, view, active):
+        self._check_open()
         raw = view.file.raw
         identity, architecture = pe_identity(raw.read)
         hash_key = (self.stamp(key, view), "file_hash")
@@ -180,7 +214,7 @@ class Workspace:
             known_hash = hash_key in self._cache
             digest = self._cache.get(hash_key)
         if not known_hash:
-            digest = original_hash(view)
+            digest = original_hash(view, cancel=self._closing)
             with self._lock:
                 self._cache[hash_key] = digest
         return {
@@ -200,7 +234,12 @@ class Workspace:
         }
 
     def list_binaries(self):
-        return {"binaries": [self.metadata(k, v, a) for k, v, a, _ in main_thread(self._views)]}
+        return {
+            "binaries": [
+                self.metadata(k, v, a)
+                for k, v, a, _ in main_thread(self._views, cancel=self._closing)
+            ]
+        }
 
     def current_location(self, binary_id=None):
         key, view, active, cursor = self.acquire(binary_id)
@@ -244,7 +283,7 @@ class Workspace:
                 raise ValueError("navigation failed")
             return {"address": f"0x{address:016x}", "coordinate": coordinate.model_dump()}
 
-        return main_thread(action)
+        return main_thread(action, cancel=self._closing)
 
     async def wait_for_analysis(self, binary_id, timeout_ms=30000):
         key, view, _, _ = await asyncio.to_thread(self.acquire, binary_id)
@@ -259,6 +298,7 @@ class Workspace:
             loop.call_soon_threadsafe(resolve)
 
         with self._lock:
+            self._check_open()
             self._waiters.setdefault(key, []).append((loop, done))
         event = None
         try:
@@ -282,6 +322,16 @@ class Workspace:
         if name not in analysis.DRIVER_TOOLS:
             raise ValueError("general analysis belongs to Binary Ninja's native MCP server")
         budget = budget or Budget()
+        with self._lock:
+            self._check_open()
+            self._budgets[id(budget)] = budget
+        try:
+            return self._query(name, binary_id, depth, function_limit, traverse, budget)
+        finally:
+            with self._lock:
+                self._budgets.pop(id(budget), None)
+
+    def _query(self, name, binary_id, depth, function_limit, traverse, budget):
         key, view, _, _ = self.acquire(binary_id)
         stamp = self.stamp(key, view)
         identity, _ = pe_identity(view.file.raw.read)
@@ -348,7 +398,7 @@ class Workspace:
             self.invalidate(key)
             return {"status": "success", "coordinate": actual.model_dump()}
 
-        return main_thread(action)
+        return main_thread(action, cancel=self._closing)
 
     def byte_snapshot(self, binary_id, size):
         key, view, active, cursor = self.acquire(binary_id)

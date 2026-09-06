@@ -168,7 +168,7 @@ def compare_bytes(static: bytes, runtime: bytes, requested: int, relocations: li
     )
 
 
-def original_hash(view) -> str | None:
+def original_hash(view, cancel=None) -> str | None:
     """Only a provably original Raw view is hashed; never reopen a possibly replaced path."""
     raw = view.file.raw
     if raw is None or raw.modified or view.file.filename.lower().endswith(".bndb"):
@@ -176,6 +176,8 @@ def original_hash(view) -> str | None:
     digest = hashlib.sha256()
     length = raw.length
     for offset in range(0, length, 1024 * 1024):
+        if cancel is not None and cancel.is_set():
+            raise InterruptedError("Binary Ninja is shutting down")
         size = min(1024 * 1024, length - offset)
         data = bytes(raw.read(offset, size))
         if len(data) != size:

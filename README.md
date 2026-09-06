@@ -48,6 +48,12 @@ restart. Status and Connection Information remain available. Port collisions are
 failures. Stop is asynchronous; Start works after Status reports stopped. Only `/mcp`
 is served. Native Binary Ninja MCP is a separate server, normally on port `24642`.
 
+Quitting Binary Ninja stops the listener and closes the local WinDbg pairing. Pending
+UI/analysis work is cancelled, and late dependency-setup completion cannot restart the
+listener. Shutdown allows up to three seconds for network cleanup before returning to
+Binary Ninja's exit sequence. It does not end the debugger session or remove breakpoints.
+Closing a binary view alone leaves the process-wide listener running.
+
 First startup creates `binja-windbg-mcp/profiles.json` under Binary Ninja's user data
 directory, with mode `0600` and a generated 32-byte bearer token encoded in hex. Configure
 the host with `Authorization: Bearer <token>` for the companion. Connection Information

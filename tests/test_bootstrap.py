@@ -273,3 +273,37 @@ def test_controls_follow_listener_lifecycle(state, alive, want_start, expected):
     ) == expected
     assert bn.enabled["WinDbg MCP\\Status"]()
     assert bn.enabled["WinDbg MCP\\Connection Information"]()
+
+
+def test_quit_and_exit_hooks_stop_once_and_prevent_late_start(monkeypatch):
+    bn = FakeBN()
+    plugin = bootstrap.Plugin(bn)
+    quit_callbacks, exit_callbacks, stopped = [], [], []
+    application = N(aboutToQuit=N(connect=quit_callbacks.append))
+    monkeypatch.setitem(sys.modules, "PySide6", N())
+    monkeypatch.setitem(
+        sys.modules, "PySide6.QtCore", N(QCoreApplication=N(instance=lambda: application))
+    )
+    monkeypatch.setattr(bootstrap.atexit, "register", exit_callbacks.append)
+    plugin.attach_shutdown_hooks()
+    plugin.listener = N(shutdown=lambda: stopped.append(True))
+    quit_callbacks[0]()
+    exit_callbacks[0]()
+    plugin.start()
+    plugin._setup_finished(bootstrap.DependencyError("late failure"))
+    assert stopped == [True]
+    assert not bn.tasks
+    assert not bn.logs
+    assert not plugin.can_start() and not plugin.can_stop()
+
+
+def test_dependency_setup_finishing_after_quit_never_queues_ui_work(monkeypatch):
+    bn = FakeBN()
+    plugin = bootstrap.Plugin(bn)
+    monkeypatch.setattr(bootstrap, "ensure_dependencies", lambda *args: None)
+    plugin.start()
+    plugin.shutdown()
+    bn.tasks[0].run()
+    assert not bn.pending
+    assert plugin.listener is None
+    assert plugin.shutting_down

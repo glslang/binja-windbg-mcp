@@ -190,3 +190,18 @@ def test_original_hash_uses_binary_view_length_and_rejects_partial_or_modified_b
     raw.modified = False
     view.file.filename = "driver.bndb"
     assert original_hash(view) is None
+
+
+def test_original_hash_stops_at_shutdown():
+    from threading import Event
+    from types import SimpleNamespace as N
+
+    import pytest
+
+    from binja_windbg_mcp.core import original_hash
+
+    closing = Event()
+    closing.set()
+    raw = N(length=1, modified=False, read=lambda *args: pytest.fail("read during shutdown"))
+    with pytest.raises(InterruptedError):
+        original_hash(N(file=N(raw=raw, filename="driver.sys")), cancel=closing)
