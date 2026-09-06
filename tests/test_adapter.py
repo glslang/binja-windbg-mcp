@@ -96,7 +96,9 @@ def test_analysis_wait_cancellation_releases_subscription(monkeypatch):
     workspace = Workspace()
     cancelled = []
     event = N(cancel=lambda: cancelled.append(True))
-    view = N(add_analysis_completion_event=lambda callback: event)
+    view = N(
+        add_analysis_completion_event=lambda callback: event, analysis_state=N(name="AnalyzeState")
+    )
     monkeypatch.setattr(workspace, "acquire", lambda _: ((1, "PE"), view, True, 0))
 
     async def check():
@@ -209,3 +211,41 @@ def test_evidence_edit_is_pinned_and_rejects_stale_or_mismatched_provenance(monk
     assert text[0].startswith("existing comment\n[windbg-evidence] ")
     record = json.loads(text[0].split("[windbg-evidence] ")[1])
     assert record["coordinate"]["rva"] == "0x1000" and record["file_sha256"] == "hash"
+
+
+def test_metadata_uses_typed_analysis_state_property(monkeypatch):
+    from binja_windbg_mcp import adapter
+    from binja_windbg_mcp.core import Identity
+
+    monkeypatch.setattr(
+        adapter, "pe_identity", lambda _: (Identity(timestamp=1, size=0x3000), "x86_64")
+    )
+    monkeypatch.setattr(adapter, "original_hash", lambda _: None)
+    workspace = Workspace()
+    key = (1, "PE")
+    workspace._ids[key] = "binary"
+    view = N(
+        start=0x140000000,
+        file=N(raw=N(read=None), filename="driver.sys", original_filename="driver.sys"),
+        analysis_info=N(state=0),
+        analysis_state=N(name="IdleState"),
+        modified=False,
+    )
+    assert workspace.metadata(key, view, True)["analysis_state"] == "IdleState"
+
+
+def test_idle_analysis_wait_completes_without_another_analysis_pass(monkeypatch):
+    import asyncio
+
+    workspace = Workspace()
+    cancelled = []
+    view = N(
+        add_analysis_completion_event=lambda callback: N(cancel=lambda: cancelled.append(True)),
+        analysis_state=N(name="IdleState"),
+    )
+    monkeypatch.setattr(workspace, "acquire", lambda _: ((1, "PE"), view, True, 0))
+    assert asyncio.run(workspace.wait_for_analysis("binary", timeout_ms=100)) == {
+        "status": "success"
+    }
+    assert cancelled == [True]
+    assert workspace._waiters[(1, "PE")] == []

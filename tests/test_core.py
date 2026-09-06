@@ -169,3 +169,24 @@ def test_pdb_matching_rejects_unmatched_and_age_mismatch():
 def test_retired_groups_explain_native_mcp_migration(spec):
     with pytest.raises(ValueError, match="retired.*native MCP"):
         selected_tools(spec)
+
+
+def test_original_hash_uses_binary_view_length_and_rejects_partial_or_modified_bytes():
+    import hashlib
+    from types import SimpleNamespace as N
+
+    from binja_windbg_mcp.core import original_hash
+
+    data = b"x" * (1024 * 1024 + 3)
+    raw = N(
+        length=len(data), modified=False, read=lambda offset, size: data[offset : offset + size]
+    )
+    view = N(file=N(raw=raw, filename="driver.sys"))
+    assert original_hash(view) == hashlib.sha256(data).hexdigest()
+    raw.read = lambda offset, size: b""
+    assert original_hash(view) is None
+    raw.modified = True
+    assert original_hash(view) is None
+    raw.modified = False
+    view.file.filename = "driver.bndb"
+    assert original_hash(view) is None

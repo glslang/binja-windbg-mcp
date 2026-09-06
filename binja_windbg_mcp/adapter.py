@@ -192,7 +192,7 @@ class Workspace:
             "display_name": Path(view.file.filename).name,
             "active": active,
             "architecture": architecture,
-            "analysis_state": view.analysis_info.state.name,
+            "analysis_state": view.analysis_state.name,
             "image_base": f"0x{view.start:016x}",
             "identity": identity.model_dump(),
             "generation": self.stamp(key, view),
@@ -260,13 +260,19 @@ class Workspace:
 
         with self._lock:
             self._waiters.setdefault(key, []).append((loop, done))
-        event = view.add_analysis_completion_event(complete)
+        event = None
         try:
+            event = view.add_analysis_completion_event(complete)
+            # Completion subscriptions report future analysis. Check after subscribing
+            # so an already idle view (or a completion racing registration) returns.
+            if view.analysis_state.name == "IdleState":
+                complete()
             await asyncio.wait_for(done, min(max(timeout_ms, 1), 120000) / 1000)
             await asyncio.to_thread(self.acquire, binary_id)
             return {"status": "success"}
         finally:
-            event.cancel()
+            if event is not None:
+                event.cancel()
             with self._lock:
                 waiting = self._waiters.get(key, [])
                 if (loop, done) in waiting:

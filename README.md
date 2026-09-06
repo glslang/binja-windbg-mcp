@@ -12,18 +12,33 @@ does not proxy native MCP or control its settings, listener, or credentials.
 
 ## Installation
 
-Use this repository as a directory named `binja-windbg-mcp` in Binary Ninja's per-user
-plugins directory. Version 0.2 requires Binary Ninja **6.0.10601 or later** with **Python
-3.13**. Install the hash-pinned dependencies into a fresh Python 3.13 package directory
-visible to Binary Ninja's embedded interpreter:
+Version 0.2 requires Binary Ninja **6.0.10601 or later** with its **Python 3.13**
+interpreter. Binary Ninja installs Python dependencies into its shared per-user package
+directory. On macOS with the bundled interpreter this is
+`~/Library/Application Support/Binary Ninja/python313/site-packages/`.
+No Python path override or separate dependency directory is needed.
 
-```console
-python3.13 -m pip install --require-hashes -r requirements.lock --target /path/to/companion-dependencies
-```
+[Extension Manager installs dependencies automatically](https://docs.binary.ninja/guide/plugins.html#installing-prerequisites)
+from the included `requirements.txt`. This repository is not yet published in the manager.
+For a local checkout, put the repository (or a symlink named `binja-windbg-mcp`) in
+Binary Ninja's per-user `plugins` directory, then restart Binary Ninja. Your symlink can
+point directly to the checkout; no copy or pip command is required.
 
-Add that directory to Binary Ninja's Python path before loading the plugin, then restart.
-Replace the old Python 3.10 dependency environment when migrating from 0.1. Installing
-the companion does not install packages into the Binary Ninja application bundle.
+For these manual installs, the companion checks dependencies on startup and installs
+missing packages through Binary Ninja's own Python module installer in a background task.
+**WinDbg MCP > Status** reports progress or errors, and **Start** retries a failed install.
+The installer uses Binary Ninja's configured interpreter, proxy, and package location.
+**Stop** during installation prevents the listener from starting; the package installation
+finishes. Once dependencies are available, the listener starts automatically. Updating a
+bundled package requires one further restart so already imported modules use the new version.
+
+All runtime versions are pinned in `requirements.txt`. The matching `requirements.lock`
+adds hashes for reproducible development installs; Binary Ninja's installer accepts plain
+package requirements rather than pip include/hash directives. Incompatible versions of
+user-installed packages are reported before the companion requests installation. Bundled packages may
+receive updates in the shared user directory; the application bundle is never modified.
+Resolve shared-package conflicts in the Extension Manager or with the **Install python3
+module** command-palette action, then restart. A Python 3.10 package directory from version 0.1 is not reused by 3.13.
 
 The companion autostarts at `http://127.0.0.1:8766/mcp`. The **WinDbg MCP** menu provides
 Start, Stop, Status, and Connection Information. Port collisions are visible startup
@@ -151,10 +166,12 @@ ruff format --check .
 ```
 
 The official-SDK HTTP test binds a temporary loopback socket. Its tool golden is refreshed
-only with `UPDATE_GOLDEN=1`. Runtime dependencies are hash-pinned; pytest and ruff are test
-tools. [Validation results and remaining gates](docs/binja-windbg-mcp-validation.md) distinguish
+only with `UPDATE_GOLDEN=1`. Runtime versions are pinned in both requirements files; the
+development lock also verifies hashes. Pytest and ruff are test tools.
+[Validation results and remaining gates](docs/binja-windbg-mcp-validation.md) distinguish
 Python tests, the live native-server test drive, and companion UI/real-driver acceptance.
-The native test drive does not establish the companion's UI compatibility.
+The companion startup and workspace smoke now also run in the actual UI; full lifecycle,
+pairing, and real-driver acceptance remain pending.
 
 The [implementation plan](docs/binja-windbg-mcp-plan.md) records the revised scope. Structured
 WinDbg dispatch reachability remains separate as windbg-mcp FOLLOWUPS.md item 60.

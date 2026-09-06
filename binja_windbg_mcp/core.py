@@ -174,8 +174,9 @@ def original_hash(view) -> str | None:
     if raw is None or raw.modified or view.file.filename.lower().endswith(".bndb"):
         return None
     digest = hashlib.sha256()
-    for offset in range(0, len(raw), 1024 * 1024):
-        size = min(1024 * 1024, len(raw) - offset)
+    length = raw.length
+    for offset in range(0, length, 1024 * 1024):
+        size = min(1024 * 1024, length - offset)
         data = bytes(raw.read(offset, size))
         if len(data) != size:
             return None
