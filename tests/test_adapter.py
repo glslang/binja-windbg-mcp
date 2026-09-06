@@ -557,3 +557,127 @@ def test_capture_reinterprets_union_offsets_only_for_registered_control_dispatch
     result = adapter.capture_driver(view, Budget())
     assert len(result["functions"]) == 4
     assert called == [(f.start, False) for f in functions] + [(0x1100, True), (0x1200, True)]
+
+
+def test_case_goto_uses_label_destination_and_retains_branch_evidence():
+    label = node("HLIL_LABEL", address=0x1300)
+    target = node("HLIL_GOTO", address=0x1104, target=N(label_id=7))
+    switch = node(
+        "HLIL_SWITCH",
+        condition=field("Parameters.DeviceIoControl.IoControlCode"),
+        cases=[N(values=[constant(0x6DC044)], body=target)],
+    )
+    function = N(
+        start=0x1100,
+        hlil=N(root=switch, get_label=lambda label_id: label if label_id == 7 else None),
+    )
+    result = _capture_function(N(start=0x1000), function, {}, Budget())
+    assert result["control_cases"][0]["site"] == "0x300"
+    assert result["control_cases"][0]["evidence"][1] == {
+        "kind": "goto_target",
+        "site": "0x104",
+        "target_rva": "0x300",
+    }
+    function.hlil.get_label = lambda label_id: None
+    result = _capture_function(N(start=0x1000), function, {}, Budget())
+    assert result["control_cases"] == []
+    assert result["unresolved"][0]["reason"] == "switch case destination unavailable"
+
+
+def test_empty_equality_branch_follows_sibling_and_resolves_shared_label():
+    from binja_windbg_mcp.adapter import _case_target
+
+    condition = node("HLIL_IF", expr_index=1)
+    label = node("HLIL_LABEL", address=0x1300)
+    onward = node("HLIL_GOTO", address=0x1110, expr_index=2, target=N(label_id=7))
+    parent = node("HLIL_BLOCK", body=[condition, onward])
+    condition.parent = parent
+    target, evidence = _case_target(
+        node("HLIL_NOP"), condition, N(get_label=lambda label_id: label), 0x1000, Budget()
+    )
+    assert target is label
+    assert [item["kind"] for item in evidence] == ["fallthrough", "goto_target"]
+    parent.body = [condition, node("HLIL_ASSIGN", address=0x1200, expr_index=3)]
+    target, _ = _case_target(node("HLIL_NOP"), condition, None, 0x1000, Budget())
+    assert target.address == 0x1200
+
+
+def test_case_fallthrough_does_not_cross_loop_or_unresolved_boundaries():
+    from binja_windbg_mcp.adapter import _case_target
+
+    condition = node("HLIL_IF", expr_index=1)
+    parent = node(
+        "HLIL_BLOCK", body=[condition], expr_index=2, parent=node("HLIL_WHILE", expr_index=3)
+    )
+    condition.parent = parent
+    target, _ = _case_target(node("HLIL_NOP"), condition, None, 0x1000, Budget())
+    assert target is None
+    parent.parent = None
+    target, _ = _case_target(node("HLIL_NOP"), condition, None, 0x1000, Budget())
+    assert target is None
+
+
+def test_case_block_uses_first_statement_instead_of_synthetic_block_address():
+    from binja_windbg_mcp.adapter import _case_target
+
+    first = node("HLIL_ASSIGN", address=0x1180)
+    block = node("HLIL_BLOCK", address=0x11A0, body=[first])
+    target, _ = _case_target(block, None, None, 0x1000, Budget())
+    assert target is first
+
+
+def test_replay_mountmgr_structured_branch_destinations():
+    import json
+    from pathlib import Path
+
+    from binja_windbg_mcp.adapter import _case_target
+
+    fixture = json.loads(
+        Path(__file__)
+        .with_name("fixtures")
+        .joinpath("inputs/mountmgr-branch-shapes.json")
+        .read_text()
+    )
+    labels = {}
+
+    def replay(value):
+        result = node(
+            value["op"], address=int(value["address"], 16), expr_index=value["expr_index"]
+        )
+        if "body" in value:
+            result.body = [replay(child) for child in value["body"]]
+            for child in result.body:
+                child.parent = result
+        if "label" in value:
+            labels[value["label_id"]] = replay(value["label"])
+            result.target = N(label_id=value["label_id"])
+        return result
+
+    il = N(get_label=labels.get)
+    switches = [branch for branch in fixture["branches"] if "cases" in branch]
+    expected = [
+        [0x18DF4, 0x18E94],
+        [0x18E54, 0x18E94, 0x18CEC],
+        [0x19178, 0x191BC, 0x19190, 0x191A8],
+    ]
+    for branch, destinations in zip(switches, expected, strict=True):
+        actual = []
+        for case in branch["cases"]:
+            target, _ = _case_target(replay(case["body"]), replay(branch["node"]), il, 0, Budget())
+            actual.append(target.address)
+        assert actual == destinations
+
+    expected_fallthroughs = {0x18C14: 0x18C24, 0x18CE8: 0x18CEC, 0x18D40: 0x18D48, 0x18BA0: 0x18BA8}
+    for branch in fixture["branches"]:
+        if "siblings" not in branch:
+            continue
+        parent = replay(branch["parent"])
+        parent.body = [replay(sibling) for sibling in branch["siblings"]]
+        for child in parent.body:
+            child.parent = parent
+        condition = next(
+            child for child in parent.body if child.expr_index == branch["node"]["expr_index"]
+        )
+        target, evidence = _case_target(replay(branch["false"]), condition, il, 0, Budget())
+        assert target.address == expected_fallthroughs[condition.address]
+        assert evidence[0]["kind"] == "fallthrough"

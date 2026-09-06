@@ -670,6 +670,62 @@ def capture_driver(view, budget, imports_only=False):
     return result
 
 
+def _following_statement(node):
+    """Find structured fallthrough without crossing a loop or function boundary."""
+    for _ in range(12):
+        parent = getattr(node, "parent", None)
+        if _op(parent) == "HLIL_BLOCK":
+            body = parent.body
+            index = next(
+                (
+                    i
+                    for i, child in enumerate(body)
+                    if child is node or child.expr_index == node.expr_index
+                ),
+                None,
+            )
+            if index is None:
+                return None
+            if index + 1 < len(body):
+                return body[index + 1]
+        elif _op(parent) != "HLIL_IF":
+            return None
+        node = parent
+    return None
+
+
+def _case_target(target, branch, il, base, budget):
+    evidence = []
+    for _ in range(12):
+        budget.check()
+        if _op(target) == "HLIL_NOP" or (
+            _op(target) == "HLIL_BLOCK" and getattr(target, "body", None) == []
+        ):
+            target = _following_statement(branch)
+            if target is None:
+                return None, evidence
+            evidence.append({"kind": "fallthrough", "site": hex(branch.address - base)})
+            branch = target
+        elif _op(target) == "HLIL_BLOCK" and getattr(target, "body", None):
+            target = target.body[0]
+            branch = target
+        elif _op(target) == "HLIL_GOTO":
+            label = il.get_label(target.target.label_id)
+            if label is None or _op(label) != "HLIL_LABEL":
+                return None, evidence
+            evidence.append(
+                {
+                    "kind": "goto_target",
+                    "site": hex(target.address - base),
+                    "target_rva": hex(label.address - base),
+                }
+            )
+            return label, evidence
+        else:
+            return target, evidence
+    return None, evidence
+
+
 def _capture_function(view, function, layouts, budget, ioctl_context=None):
     row = {
         "rva": hex(function.start - view.start),
@@ -766,19 +822,38 @@ def _capture_function(view, function, layouts, budget, ioctl_context=None):
                 else (cond.right, _constant(cond.left))
             )
             if constant is not None and is_control(source):
-                target = node.true if _op(cond) == "HLIL_CMP_E" else node.false
+                body = node.true if _op(cond) == "HLIL_CMP_E" else node.false
+                target, flow = _case_target(
+                    body,
+                    node,
+                    il,
+                    view.start,
+                    budget,
+                )
+                if target is None:
+                    row["unresolved"].append(
+                        {"reason": "case destination unavailable", "site": site, "code": constant}
+                    )
+                    continue
                 row["control_cases"].append(
                     {
                         "input": "Parameters.DeviceIoControl.IoControlCode",
                         "code": constant & 0xFFFFFFFF,
                         "site": hex(target.address - view.start),
                         "evidence": [{"kind": "comparison", "site": site}]
-                        + _size_checks(target, view, budget, field_path),
+                        + flow
+                        + _size_checks(body, view, budget, field_path),
                     }
                 )
         elif operation == "HLIL_SWITCH":
             if is_control(node.condition):
                 for case in node.cases:
+                    target, flow = _case_target(case.body, node, il, view.start, budget)
+                    if target is None:
+                        row["unresolved"].append(
+                            {"reason": "switch case destination unavailable", "site": site}
+                        )
+                        continue
                     for value in case.values:
                         code = _constant(value)
                         if code is not None:
@@ -786,8 +861,9 @@ def _capture_function(view, function, layouts, budget, ioctl_context=None):
                                 {
                                     "input": "Parameters.DeviceIoControl.IoControlCode",
                                     "code": code & 0xFFFFFFFF,
-                                    "site": hex(case.body.address - view.start),
+                                    "site": hex(target.address - view.start),
                                     "evidence": [{"kind": "switch", "site": site}]
+                                    + flow
                                     + _size_checks(case.body, view, budget, field_path),
                                 }
                             )

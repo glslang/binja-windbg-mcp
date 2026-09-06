@@ -66,3 +66,37 @@ def test_current_hevd_fixture_recovers_all_reviewed_cases_without_inventing_size
     composite = driver_surface(fixture["capture"], Budget())
     assert len(composite["ioctl_map"]["cases"]) == 29
     assert composite["ioctl_map"]["traversal"]["truncated"]  # Same intentional depth boundary.
+
+
+def test_mountmgr_fixture_distinguishes_recognized_codes_from_default_table_slots():
+    fixture = json.loads(
+        Path(__file__).with_name("fixtures").joinpath("mountmgr-arm64-bn6.json").read_text()
+    )
+    result = ioctl_map(fixture["capture"], Budget())
+    assert result["status"] == "success" and result["unresolved"] == []
+    assert len(result["cases"]) == 93
+    reference = fixture["reference_routing"]
+    recognized = {case["code"] for case in reference if case["kind"] != "default"}
+    assert len(recognized) == 24
+    assert sum(case["kind"] == "default" for case in reference) == 45
+    assert {case["code"] for case in result["cases"]} > recognized
+    assert (
+        sorted(
+            [row["major_function"], row["callback_rva"]]
+            for row in driver_surface(fixture["capture"], Budget())["driver_entry"]["roots"]
+        )
+        == fixture["expected_roots"]
+    )
+    for table in fixture["reference_jump_tables"]:
+        data = bytes.fromhex(table["data"])
+        width = table["entry_width"]
+        assert len(data) == width * table["entry_count"]
+        decoded = [
+            hex(
+                int(table["target_base_rva"], 16)
+                + table["target_scale"] * int.from_bytes(data[i : i + width], "little", signed=True)
+            )
+            for i in range(0, len(data), width)
+        ]
+        assert decoded == table["targets"]
+    assert [table["entry_width"] for table in fixture["reference_jump_tables"]] == [4, 4, 1]

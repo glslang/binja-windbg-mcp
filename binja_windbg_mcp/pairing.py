@@ -20,6 +20,12 @@ def leaf_errors(error):
         yield error
 
 
+async def reject_authentication_failure(response):
+    # SDK 2.1.1 otherwise converts these statuses to an unclassified MCP error.
+    if response.status_code in (401, 403):
+        response.raise_for_status()
+
+
 class Pairing:
     def __init__(self, workspace, profiles):
         self.workspace, self.profiles = workspace, profiles
@@ -147,6 +153,7 @@ class Pairing:
                         follow_redirects=False,
                         trust_env=False,
                         timeout=30,
+                        event_hooks={"response": [reject_authentication_failure]},
                     ) as http:
                         async with Client(
                             streamable_http_client(url, http_client=http), read_timeout_seconds=30

@@ -1,0 +1,662 @@
+{
+  "file_sha256": "734b4a45381ca6850d827f895e86e50ad03a882689483510402d96757fe15497",
+  "analysis_version": "6.0.10601 Personal",
+  "branches": [
+    {
+      "node": {
+        "op": "HLIL_SWITCH",
+        "address": "0x18e8c",
+        "expr_index": 1085,
+        "text": "switch (Create)\n    case 0x6dc040, 0x6dc044, 0x6dc04c, 0x6dc050, 0x6dc054\n        goto label_140018df4\n    case 0x6dc041, 0x6dc042, 0x6dc043, 0x6dc045, 0x6dc046, 0x6dc047, 0x6dc048"
+      },
+      "default": {
+        "op": "HLIL_NOP",
+        "address": "0x18e8c",
+        "expr_index": 1084,
+        "text": "nop"
+      },
+      "cases": [
+        {
+          "values": [
+            "0x6dc040",
+            "0x6dc044",
+            "0x6dc04c",
+            "0x6dc050",
+            "0x6dc054"
+          ],
+          "body": {
+            "op": "HLIL_GOTO",
+            "address": "0x18e8c",
+            "expr_index": 1021,
+            "text": "goto label_140018df4",
+            "label_id": 1252,
+            "label": {
+              "op": "HLIL_LABEL",
+              "address": "0x18df4",
+              "expr_index": 1020,
+              "parent": "HLIL_BLOCK"
+            }
+          }
+        },
+        {
+          "values": [
+            "0x6dc041",
+            "0x6dc042",
+            "0x6dc043",
+            "0x6dc045",
+            "0x6dc046",
+            "0x6dc047",
+            "0x6dc048",
+            "0x6dc049",
+            "0x6dc04a",
+            "0x6dc04b",
+            "0x6dc04d",
+            "0x6dc04e",
+            "0x6dc04f",
+            "0x6dc051",
+            "0x6dc052",
+            "0x6dc053"
+          ],
+          "body": {
+            "op": "HLIL_GOTO",
+            "address": "0x18e8c",
+            "expr_index": 1026,
+            "text": "goto label_140018e94",
+            "label_id": 1412,
+            "label": {
+              "op": "HLIL_LABEL",
+              "address": "0x18e94",
+              "expr_index": 1025,
+              "parent": "HLIL_BLOCK"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "node": {
+        "op": "HLIL_SWITCH",
+        "address": "0x18e4c",
+        "expr_index": 1094,
+        "text": "switch (Create)\n    case 0x6dc010\n        x22 = \"IOCTL_MOUNTMGR_NEXT_DRIVE_LETTER\"\n        result = MountMgrNextDriveLetter(DeviceExtension, Irp, x2_2)\n        goto label_140018ea8"
+      },
+      "default": {
+        "op": "HLIL_NOP",
+        "address": "0x18e4c",
+        "expr_index": 1093,
+        "text": "nop"
+      },
+      "cases": [
+        {
+          "values": [
+            "0x6dc010"
+          ],
+          "body": {
+            "op": "HLIL_BLOCK",
+            "address": "0x18e54",
+            "expr_index": 1091,
+            "text": "x22 = \"IOCTL_MOUNTMGR_NEXT_DRIVE_LETTER\"\nresult = MountMgrNextDriveLetter(DeviceExtension, Irp, x2_2)\ngoto label_140018ea8",
+            "body": [
+              {
+                "op": "HLIL_ASSIGN",
+                "address": "0x18e54",
+                "expr_index": 181,
+                "text": "x22 = \"IOCTL_MOUNTMGR_NEXT_DRIVE_LETTER\""
+              },
+              {
+                "op": "HLIL_ASSIGN",
+                "address": "0x18e64",
+                "expr_index": 188,
+                "text": "result = MountMgrNextDriveLetter(DeviceExtension, Irp, x2_2)"
+              }
+            ]
+          }
+        },
+        {
+          "values": [
+            "0x6dc011",
+            "0x6dc012",
+            "0x6dc013",
+            "0x6dc015",
+            "0x6dc016",
+            "0x6dc017",
+            "0x6dc019",
+            "0x6dc01a",
+            "0x6dc01b",
+            "0x6dc01d",
+            "0x6dc01e",
+            "0x6dc01f",
+            "0x6dc020",
+            "0x6dc021",
+            "0x6dc022",
+            "0x6dc023"
+          ],
+          "body": {
+            "op": "HLIL_GOTO",
+            "address": "0x18e4c",
+            "expr_index": 1028,
+            "text": "goto label_140018e94",
+            "label_id": 1412,
+            "label": {
+              "op": "HLIL_LABEL",
+              "address": "0x18e94",
+              "expr_index": 1025,
+              "parent": "HLIL_BLOCK"
+            }
+          }
+        },
+        {
+          "values": [
+            "0x6dc014",
+            "0x6dc018",
+            "0x6dc01c",
+            "0x6dc024"
+          ],
+          "body": {
+            "op": "HLIL_GOTO",
+            "address": "0x18e4c",
+            "expr_index": 1035,
+            "text": "goto label_140018cec",
+            "label_id": 988,
+            "label": {
+              "op": "HLIL_LABEL",
+              "address": "0x18cec",
+              "expr_index": 1033,
+              "parent": "HLIL_BLOCK"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "node": {
+        "op": "HLIL_IF",
+        "address": "0x18c14",
+        "expr_index": 1172,
+        "text": "if (Create == 0x6d4028)\n    goto label_140018cec"
+      },
+      "true": {
+        "op": "HLIL_GOTO",
+        "address": "0x18c14",
+        "expr_index": 1034,
+        "text": "goto label_140018cec",
+        "label_id": 988,
+        "label": {
+          "op": "HLIL_LABEL",
+          "address": "0x18cec",
+          "expr_index": 1033,
+          "parent": "HLIL_BLOCK"
+        }
+      },
+      "false": {
+        "op": "HLIL_NOP",
+        "address": "0x18c14",
+        "expr_index": 1171,
+        "text": "nop"
+      },
+      "parent": {
+        "op": "HLIL_BLOCK",
+        "address": "0x18c14",
+        "expr_index": 1174,
+        "text": "if (Create == 0x6d4028)\n    goto label_140018cec\n\nif (Create u> 0x6d003c)\n    if (Create == 0x6d4008)\n        x22 = \"IOCTL_MOUNTMGR_QUERY_POINTS_ADMIN\"\n        result = MountMgrQue",
+        "body": [
+          {
+            "op": "HLIL_IF",
+            "address": "0x18c14",
+            "expr_index": 1172,
+            "text": "if (Create == 0x6d4028)\n    goto label_140018cec"
+          },
+          {
+            "op": "HLIL_IF",
+            "address": "0x18c24",
+            "expr_index": 1169,
+            "text": "if (Create u> 0x6d003c)\n    if (Create == 0x6d4008)\n        x22 = \"IOCTL_MOUNTMGR_QUERY_POINTS_ADMIN\"\n        result = MountMgrQueryPoints(DeviceExtension, Irp, x2_2)\n        goto "
+          }
+        ]
+      },
+      "siblings": [
+        {
+          "op": "HLIL_IF",
+          "address": "0x18c14",
+          "expr_index": 1172,
+          "text": "if (Create == 0x6d4028)\n    goto label_140018cec"
+        },
+        {
+          "op": "HLIL_IF",
+          "address": "0x18c24",
+          "expr_index": 1169,
+          "text": "if (Create u> 0x6d003c)\n    if (Create == 0x6d4008)\n        x22 = \"IOCTL_MOUNTMGR_QUERY_POINTS_ADMIN\"\n        result = MountMgrQueryPoints(DeviceExtension, Irp, x2_2)\n        goto "
+        },
+        {
+          "op": "HLIL_IF",
+          "address": "0x18c28",
+          "expr_index": 1165,
+          "text": "if (Create == 0x6d003c)\n    x22 = \"IOCTL_MOUNTMGR_QUERY_AUTO_MOUNT\"\n    result = MountMgrQueryAutoMount(DeviceExtension, Irp, x2_2)\n    goto label_140018ea8"
+        },
+        {
+          "op": "HLIL_IF",
+          "address": "0x18c38",
+          "expr_index": 1161,
+          "text": "if (Create == 0x6d0008)\n    x22 = \"IOCTL_MOUNTMGR_QUERY_POINTS\"\n    result = MountMgrQueryPoints(DeviceExtension, Irp, x2_2)\n    goto label_140018ea8"
+        },
+        {
+          "op": "HLIL_IF",
+          "address": "0x18c48",
+          "expr_index": 1157,
+          "text": "if (Create == 0x6d0030)\n    x22 = \"IOCTL_MOUNTMGR_QUERY_DOS_VOLUME_PATH\"\n    result = MountMgrQueryDosVolumePath(DeviceExtension, Irp, x2_2)\n    goto label_140018ea8"
+        },
+        {
+          "op": "HLIL_IF",
+          "address": "0x18c58",
+          "expr_index": 1153,
+          "text": "if (Create != 0x6d0034)\n    goto label_140018e94"
+        },
+        {
+          "op": "HLIL_ASSIGN",
+          "address": "0x18c60",
+          "expr_index": 559,
+          "text": "x22 = \"IOCTL_MOUNTMGR_QUERY_DOS_VOLUME_PATHS\""
+        },
+        {
+          "op": "HLIL_ASSIGN",
+          "address": "0x18c70",
+          "expr_index": 566,
+          "text": "result = MountMgrQueryDosVolumePaths(DeviceExtension, Irp, x2_2)"
+        },
+        {
+          "op": "HLIL_GOTO",
+          "address": "0x18c74",
+          "expr_index": 1047,
+          "text": "goto label_140018ea8",
+          "label_id": 1432,
+          "label": {
+            "op": "HLIL_LABEL",
+            "address": "0x18ea8",
+            "expr_index": 1037,
+            "parent": "HLIL_BLOCK"
+          }
+        }
+      ]
+    },
+    {
+      "node": {
+        "op": "HLIL_IF",
+        "address": "0x18ce8",
+        "expr_index": 1146,
+        "text": "if (Create != 0x6d4020)\n    goto label_140018e94"
+      },
+      "true": {
+        "op": "HLIL_GOTO",
+        "address": "0x18ce8",
+        "expr_index": 1031,
+        "text": "goto label_140018e94",
+        "label_id": 1412,
+        "label": {
+          "op": "HLIL_LABEL",
+          "address": "0x18e94",
+          "expr_index": 1025,
+          "parent": "HLIL_BLOCK"
+        }
+      },
+      "false": {
+        "op": "HLIL_NOP",
+        "address": "0x18ce8",
+        "expr_index": 1145,
+        "text": "nop"
+      },
+      "parent": {
+        "op": "HLIL_BLOCK",
+        "address": "0x18cd8",
+        "expr_index": 1166,
+        "text": "if (Create == 0x6d4008)\n    x22 = \"IOCTL_MOUNTMGR_QUERY_POINTS_ADMIN\"\n    result = MountMgrQueryPoints(DeviceExtension, Irp, x2_2)\n    goto label_140018ea8\n\nif (Create != 0x6d4020)",
+        "body": [
+          {
+            "op": "HLIL_IF",
+            "address": "0x18cd8",
+            "expr_index": 1150,
+            "text": "if (Create == 0x6d4008)\n    x22 = \"IOCTL_MOUNTMGR_QUERY_POINTS_ADMIN\"\n    result = MountMgrQueryPoints(DeviceExtension, Irp, x2_2)\n    goto label_140018ea8"
+          },
+          {
+            "op": "HLIL_IF",
+            "address": "0x18ce8",
+            "expr_index": 1146,
+            "text": "if (Create != 0x6d4020)\n    goto label_140018e94"
+          }
+        ]
+      },
+      "siblings": [
+        {
+          "op": "HLIL_IF",
+          "address": "0x18cd8",
+          "expr_index": 1150,
+          "text": "if (Create == 0x6d4008)\n    x22 = \"IOCTL_MOUNTMGR_QUERY_POINTS_ADMIN\"\n    result = MountMgrQueryPoints(DeviceExtension, Irp, x2_2)\n    goto label_140018ea8"
+        },
+        {
+          "op": "HLIL_IF",
+          "address": "0x18ce8",
+          "expr_index": 1146,
+          "text": "if (Create != 0x6d4020)\n    goto label_140018e94"
+        },
+        {
+          "op": "HLIL_GOTO",
+          "address": "0x18ce8",
+          "expr_index": 1036,
+          "text": "goto label_140018cec",
+          "label_id": 988,
+          "label": {
+            "op": "HLIL_LABEL",
+            "address": "0x18cec",
+            "expr_index": 1033,
+            "parent": "HLIL_BLOCK"
+          }
+        }
+      ]
+    },
+    {
+      "node": {
+        "op": "HLIL_IF",
+        "address": "0x18d40",
+        "expr_index": 1132,
+        "text": "if (Create != 0x6d4048)\n    goto label_140018e94"
+      },
+      "true": {
+        "op": "HLIL_GOTO",
+        "address": "0x18d40",
+        "expr_index": 1030,
+        "text": "goto label_140018e94",
+        "label_id": 1412,
+        "label": {
+          "op": "HLIL_LABEL",
+          "address": "0x18e94",
+          "expr_index": 1025,
+          "parent": "HLIL_BLOCK"
+        }
+      },
+      "false": {
+        "op": "HLIL_NOP",
+        "address": "0x18d40",
+        "expr_index": 1131,
+        "text": "nop"
+      },
+      "parent": {
+        "op": "HLIL_BLOCK",
+        "address": "0x18d40",
+        "expr_index": 1134,
+        "text": "if (Create != 0x6d4048)\n    goto label_140018e94\n\nx22 = \"IOCTL_MOUNTMGR_TRACELOG_CACHE\"\nMountMgrTracelogCache(DeviceExtension, x1_5, x2_2)\nresult = 0\ngoto label_140018ea8",
+        "body": [
+          {
+            "op": "HLIL_IF",
+            "address": "0x18d40",
+            "expr_index": 1132,
+            "text": "if (Create != 0x6d4048)\n    goto label_140018e94"
+          },
+          {
+            "op": "HLIL_ASSIGN",
+            "address": "0x18d48",
+            "expr_index": 371,
+            "text": "x22 = \"IOCTL_MOUNTMGR_TRACELOG_CACHE\""
+          }
+        ]
+      },
+      "siblings": [
+        {
+          "op": "HLIL_IF",
+          "address": "0x18d40",
+          "expr_index": 1132,
+          "text": "if (Create != 0x6d4048)\n    goto label_140018e94"
+        },
+        {
+          "op": "HLIL_ASSIGN",
+          "address": "0x18d48",
+          "expr_index": 371,
+          "text": "x22 = \"IOCTL_MOUNTMGR_TRACELOG_CACHE\""
+        },
+        {
+          "op": "HLIL_CALL",
+          "address": "0x18d50",
+          "expr_index": 376,
+          "text": "MountMgrTracelogCache(DeviceExtension, x1_5, x2_2)"
+        },
+        {
+          "op": "HLIL_ASSIGN",
+          "address": "0x18d54",
+          "expr_index": 379,
+          "text": "result = 0"
+        },
+        {
+          "op": "HLIL_GOTO",
+          "address": "0x18d58",
+          "expr_index": 1044,
+          "text": "goto label_140018ea8",
+          "label_id": 1432,
+          "label": {
+            "op": "HLIL_LABEL",
+            "address": "0x18ea8",
+            "expr_index": 1037,
+            "parent": "HLIL_BLOCK"
+          }
+        }
+      ]
+    },
+    {
+      "node": {
+        "op": "HLIL_IF",
+        "address": "0x18ba0",
+        "expr_index": 1257,
+        "text": "if (Create != 0x6d0034)\n    goto label_1400191bc"
+      },
+      "true": {
+        "op": "HLIL_GOTO",
+        "address": "0x18ba0",
+        "expr_index": 1075,
+        "text": "goto label_1400191bc",
+        "label_id": 2220,
+        "label": {
+          "op": "HLIL_LABEL",
+          "address": "0x191bc",
+          "expr_index": 1068,
+          "parent": "HLIL_BLOCK"
+        }
+      },
+      "false": {
+        "op": "HLIL_NOP",
+        "address": "0x18ba0",
+        "expr_index": 1256,
+        "text": "nop"
+      },
+      "parent": {
+        "op": "HLIL_BLOCK",
+        "address": "0x18b64",
+        "expr_index": 1271,
+        "text": "if (Create u> 0x6d003c)\n    if (Create == 0x6d4008)\n        x22 = \"IOCTL_MOUNTMGR_QUERY_POINTS_ADMIN\"\n        goto label_140018abc\n    \n    if (Create != 0x6d4020)\n        goto lab",
+        "body": [
+          {
+            "op": "HLIL_IF",
+            "address": "0x18b64",
+            "expr_index": 1269,
+            "text": "if (Create u> 0x6d003c)\n    if (Create == 0x6d4008)\n        x22 = \"IOCTL_MOUNTMGR_QUERY_POINTS_ADMIN\"\n        goto label_140018abc\n    \n    if (Create != 0x6d4020)\n        goto lab"
+          },
+          {
+            "op": "HLIL_IF",
+            "address": "0x18b68",
+            "expr_index": 1265,
+            "text": "if (Create == 0x6d003c)\n    x22 = \"IOCTL_MOUNTMGR_QUERY_AUTO_MOUNT\"\n    result_1 = MountMgrQueryAutoMount(DeviceExtension, Irp, x2)\n    goto label_140018ac0"
+          }
+        ]
+      },
+      "siblings": [
+        {
+          "op": "HLIL_IF",
+          "address": "0x18b64",
+          "expr_index": 1269,
+          "text": "if (Create u> 0x6d003c)\n    if (Create == 0x6d4008)\n        x22 = \"IOCTL_MOUNTMGR_QUERY_POINTS_ADMIN\"\n        goto label_140018abc\n    \n    if (Create != 0x6d4020)\n        goto lab"
+        },
+        {
+          "op": "HLIL_IF",
+          "address": "0x18b68",
+          "expr_index": 1265,
+          "text": "if (Create == 0x6d003c)\n    x22 = \"IOCTL_MOUNTMGR_QUERY_AUTO_MOUNT\"\n    result_1 = MountMgrQueryAutoMount(DeviceExtension, Irp, x2)\n    goto label_140018ac0"
+        },
+        {
+          "op": "HLIL_IF",
+          "address": "0x18b78",
+          "expr_index": 1261,
+          "text": "if (Create == 0x6d0030)\n    x22 = \"IOCTL_MOUNTMGR_QUERY_DOS_VOLUME_PATH\"\n    result_1 = MountMgrQueryDosVolumePath(DeviceExtension, Irp, x2)\n    goto label_140018ac0"
+        },
+        {
+          "op": "HLIL_IF",
+          "address": "0x18ba0",
+          "expr_index": 1257,
+          "text": "if (Create != 0x6d0034)\n    goto label_1400191bc"
+        },
+        {
+          "op": "HLIL_ASSIGN",
+          "address": "0x18ba8",
+          "expr_index": 637,
+          "text": "x22 = \"IOCTL_MOUNTMGR_QUERY_DOS_VOLUME_PATHS\""
+        },
+        {
+          "op": "HLIL_ASSIGN",
+          "address": "0x18bb4",
+          "expr_index": 644,
+          "text": "result_1 = MountMgrQueryDosVolumePaths(DeviceExtension, Irp, x2)"
+        },
+        {
+          "op": "HLIL_GOTO",
+          "address": "0x18bb8",
+          "expr_index": 1065,
+          "text": "goto label_140018ac0",
+          "label_id": 432,
+          "label": {
+            "op": "HLIL_LABEL",
+            "address": "0x18ac0",
+            "expr_index": 1048,
+            "parent": "HLIL_BLOCK"
+          }
+        }
+      ]
+    },
+    {
+      "node": {
+        "op": "HLIL_SWITCH",
+        "address": "0x19170",
+        "expr_index": 1191,
+        "text": "switch (Create)\n    case 0x6dc044\n        x22 = \"IOCTL_MOUNTMGR_BOOT_DL_ASSIGNMENT\"\n        result_1 = MountMgrBootDriveLetterAssignment(DeviceExtension, Irp)\n        goto label_14"
+      },
+      "default": {
+        "op": "HLIL_NOP",
+        "address": "0x19170",
+        "expr_index": 1190,
+        "text": "nop"
+      },
+      "cases": [
+        {
+          "values": [
+            "0x6dc044"
+          ],
+          "body": {
+            "op": "HLIL_BLOCK",
+            "address": "0x19178",
+            "expr_index": 1183,
+            "text": "x22 = \"IOCTL_MOUNTMGR_BOOT_DL_ASSIGNMENT\"\nresult_1 = MountMgrBootDriveLetterAssignment(DeviceExtension, Irp)\ngoto label_140018ac0",
+            "body": [
+              {
+                "op": "HLIL_ASSIGN",
+                "address": "0x19178",
+                "expr_index": 302,
+                "text": "x22 = \"IOCTL_MOUNTMGR_BOOT_DL_ASSIGNMENT\""
+              },
+              {
+                "op": "HLIL_ASSIGN",
+                "address": "0x19184",
+                "expr_index": 308,
+                "text": "result_1 = MountMgrBootDriveLetterAssignment(DeviceExtension, Irp)"
+              }
+            ]
+          }
+        },
+        {
+          "values": [
+            "0x6dc045",
+            "0x6dc046",
+            "0x6dc047",
+            "0x6dc048",
+            "0x6dc049",
+            "0x6dc04a",
+            "0x6dc04b",
+            "0x6dc04d",
+            "0x6dc04e",
+            "0x6dc04f",
+            "0x6dc051",
+            "0x6dc052",
+            "0x6dc053"
+          ],
+          "body": {
+            "op": "HLIL_GOTO",
+            "address": "0x19170",
+            "expr_index": 1069,
+            "text": "goto label_1400191bc",
+            "label_id": 2220,
+            "label": {
+              "op": "HLIL_LABEL",
+              "address": "0x191bc",
+              "expr_index": 1068,
+              "parent": "HLIL_BLOCK"
+            }
+          }
+        },
+        {
+          "values": [
+            "0x6dc04c",
+            "0x6dc050"
+          ],
+          "body": {
+            "op": "HLIL_BLOCK",
+            "address": "0x19190",
+            "expr_index": 1185,
+            "text": "x22 = \"IOCTL_MOUNTMGR_PREPARE_VOLUME_REMOVAL\"\nresult_1 = MountMgrPrepareVolumeDelete(DeviceExtension, Irp, x2)\ngoto label_140018ac0",
+            "body": [
+              {
+                "op": "HLIL_ASSIGN",
+                "address": "0x19190",
+                "expr_index": 311,
+                "text": "x22 = \"IOCTL_MOUNTMGR_PREPARE_VOLUME_REMOVAL\""
+              },
+              {
+                "op": "HLIL_ASSIGN",
+                "address": "0x1919c",
+                "expr_index": 318,
+                "text": "result_1 = MountMgrPrepareVolumeDelete(DeviceExtension, Irp, x2)"
+              }
+            ]
+          }
+        },
+        {
+          "values": [
+            "0x6dc054"
+          ],
+          "body": {
+            "op": "HLIL_BLOCK",
+            "address": "0x191a8",
+            "expr_index": 1187,
+            "text": "x22 = \"IOCTL_MOUNTMGR_SILO_ARRIVAL\"\nresult_1 = MountMgrSiloArrival(x0_2, Irp)\ngoto label_140018ac0",
+            "body": [
+              {
+                "op": "HLIL_ASSIGN",
+                "address": "0x191a8",
+                "expr_index": 321,
+                "text": "x22 = \"IOCTL_MOUNTMGR_SILO_ARRIVAL\""
+              },
+              {
+                "op": "HLIL_ASSIGN",
+                "address": "0x191b0",
+                "expr_index": 327,
+                "text": "result_1 = MountMgrSiloArrival(x0_2, Irp)"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

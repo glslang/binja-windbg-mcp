@@ -291,8 +291,9 @@ class Listener:
             self._loop = asyncio.get_running_loop()
             server, pairing = make_server(self.workspace, self.profiles)
             self._pairing = pairing
+            # SDK 2.1.1 watches client disconnects only on its streaming response path.
             app = Authenticated(
-                server.streamable_http_app(json_response=True), self.profiles.token, self.port
+                server.streamable_http_app(json_response=False), self.profiles.token, self.port
             )
             self.http = uvicorn.Server(
                 uvicorn.Config(

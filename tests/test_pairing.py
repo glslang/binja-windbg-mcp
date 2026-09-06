@@ -298,3 +298,85 @@ def test_unpair_resolves_inflight_and_queued_actions_without_retry(monkeypatch):
             await asyncio.gather(*actions, return_exceptions=True)
 
     asyncio.run(check())
+
+
+@pytest.mark.parametrize("status", [401, 403])
+def test_real_http_auth_failure_survives_sdk_error_normalization(status):
+    import json
+    import socket
+    import threading
+
+    import uvicorn
+
+    server = MCPServer("http-auth-test")
+
+    @server.tool(structured_output=True)
+    async def modules(session_id: str, limit: int) -> dict[str, object]:
+        return {
+            "status": "ok",
+            "modules": [{"name": "driver", "image_name": "driver.sys", **IDENTITY}],
+        }
+
+    @server.tool(structured_output=True)
+    async def current_location(session_id: str) -> dict[str, object]:
+        return {"status": "ok"}
+
+    app = server.streamable_http_app()
+    polls = []
+
+    async def reject_poll(scope, receive, send):
+        if scope["type"] != "http":
+            return await app(scope, receive, send)
+        body = bytearray()
+        while True:
+            message = await receive()
+            body.extend(message.get("body", b""))
+            if not message.get("more_body"):
+                break
+        request = json.loads(body) if body else {}
+        if request.get("params", {}).get("name") == "current_location":
+            polls.append(True)
+            await send({"type": "http.response.start", "status": status, "headers": []})
+            await send({"type": "http.response.body", "body": b"Request refused"})
+            return
+        delivered = False
+
+        async def replay():
+            nonlocal delivered
+            if not delivered:
+                delivered = True
+                return {"type": "http.request", "body": bytes(body), "more_body": False}
+            return await receive()
+
+        await app(scope, replay, send)
+
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        sock.listen(128)
+        port = sock.getsockname()[1]
+        http = uvicorn.Server(uvicorn.Config(reject_poll, log_level="critical"))
+        thread = threading.Thread(target=lambda: http.run(sockets=[sock]), daemon=True)
+        thread.start()
+
+        class HttpProfiles:
+            def profile(self, name):
+                return f"http://127.0.0.1:{port}/mcp", "test"
+
+        async def check():
+            while not http.started:
+                await asyncio.sleep(0.01)
+            pair = Pairing(Workspace(), HttpProfiles())
+            try:
+                await pair.pair("debugger", "session", "binary", 200)
+                await asyncio.wait_for(asyncio.shield(pair.task), 3)
+                assert pair.state["state"] == "authentication_failed"
+                assert len(polls) == 1
+            finally:
+                await pair.unpair()
+
+        try:
+            asyncio.run(check())
+        finally:
+            http.should_exit = True
+            thread.join(5)
+        assert not thread.is_alive()

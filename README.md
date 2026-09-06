@@ -188,10 +188,15 @@ ruff format --check .
 The official-SDK HTTP test binds a temporary loopback socket. Its tool golden is refreshed
 only with `UPDATE_GOLDEN=1`. Runtime versions are pinned in both requirements files; the
 development lock also verifies hashes. Pytest and ruff are test tools.
-[Validation results and remaining gates](docs/binja-windbg-mcp-validation.md) distinguish
+[Validation results and scope](docs/binja-windbg-mcp-validation.md) distinguish
 Python tests, the live native-server test drive, and companion UI/real-driver acceptance.
-The companion startup and workspace smoke now also run in the actual UI; full lifecycle,
-pairing, and real-driver acceptance remain pending.
+The identified HEVD and mountmgr builds pass static and live bridge acceptance. UI
+lifecycle, paired shutdown, actual module replacement and connection failures were
+exercised against the installed application and Windows VM.
 
 The [implementation plan](docs/binja-windbg-mcp-plan.md) records the revised scope. Structured
 WinDbg dispatch reachability remains separate as windbg-mcp FOLLOWUPS.md item 60.
+
+The [complete mountmgr acceptance](docs/mountmgr-e2e.md) records 24 recognized IOCTL codes,
+93 host/silo case records, standard-user runtime access, guarded live actions, real module
+replacement, reconnect/authentication faults, cancellation and paired GUI shutdown.

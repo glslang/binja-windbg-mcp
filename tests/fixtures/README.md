@@ -28,5 +28,22 @@ background task on the selected, fully analyzed PE view. Supply independently re
 `expected_mappings` with `code`, `dispatch_rva`, and `case_rva`. The helper refuses
 incomplete captures and unavailable original bytes. Mocks supplement real captures.
 
-A separate complete mountmgr capture and independently observed runtime access remain
-outstanding. This HEVD build does not establish recovery for other drivers or builds.
+Each capture establishes results for its identified build, not universal recovery.
+
+## Complete mountmgr capture
+
+`mountmgr-arm64-bn6.json` pins the installed ARM64 10.0.26100.1 build, matching public
+PDB, explicit NT type prerequisites, 184 captured functions and independent dispatch
+routing. Its 93 case records comprise 48 host/silo routes for 24 recognized codes and
+45 explicit jump-table slots that lead to default rejection. A table slot is not a
+supported IOCTL. The three original tables, including a signed-byte table, are retained.
+
+Reference expectations were constructed from original ARM64 instructions and table bytes
+by enumerating the 0x006d device-type domain in both contexts. They were then compared with
+the adapter and authenticated MCP output. The case address names the first source-mapped
+statement; address-materialization instructions can precede it. Real goto, empty-branch
+and switch shapes are retained in `inputs/mountmgr-branch-shapes.json`.
+
+The original mountmgr file hash was verified separately from the saved BNDB, whose adapter
+hash is unavailable. See the [complete static/live report](../../docs/mountmgr-e2e.md) and
+`tools/mountmgr_reference.py` for the independent mapping verification.

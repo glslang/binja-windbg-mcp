@@ -153,3 +153,43 @@ def test_stop_before_http_setup_is_preserved(tmp_path, monkeypatch):
         listener.thread.join(3)
     assert not listener.thread.is_alive()
     assert listener.state == "stopped"
+
+
+def test_http_client_cancellation_stops_pending_analysis(tmp_path):
+    import threading
+
+    started, cancelled = threading.Event(), threading.Event()
+
+    class WaitingWorkspace(Workspace):
+        async def wait_for_analysis(self, binary_id, timeout_ms):
+            try:
+                started.set()
+                await asyncio.Event().wait()
+            finally:
+                cancelled.set()
+
+    profiles = Profiles(tmp_path)
+    listener = Listener(WaitingWorkspace(), profiles, port=0)
+    listener.start()
+    url = f"http://127.0.0.1:{listener.port}/mcp"
+
+    async def check():
+        async with httpx2.AsyncClient(
+            headers={"Authorization": "Bearer " + profiles.token}, trust_env=False
+        ) as http:
+            async with Client(streamable_http_client(url, http_client=http)) as client:
+                pending = asyncio.create_task(
+                    client.call_tool("wait_for_analysis", {"binary_id": "busy"})
+                )
+                assert await asyncio.to_thread(started.wait, 2)
+                pending.cancel()
+                with pytest.raises(asyncio.CancelledError):
+                    await pending
+                assert await asyncio.to_thread(cancelled.wait, 2)
+
+    try:
+        time.sleep(0.2)
+        asyncio.run(check())
+    finally:
+        listener.stop()
+        listener.thread.join(5)

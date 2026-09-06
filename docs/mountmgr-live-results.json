@@ -1,0 +1,363 @@
+{
+  "date": "2026-09-06",
+  "binary_ninja": "6.0.10601 Personal",
+  "mountmgr_sha256": "734b4a45381ca6850d827f895e86e50ad03a882689483510402d96757fe15497",
+  "focused_actions": [
+    {
+      "server": "bn",
+      "tool": "compare_runtime_bytes",
+      "arguments": {},
+      "elapsed_seconds": 0.01,
+      "result": {
+        "_meta": {
+          "io.modelcontextprotocol/serverInfo": {
+            "name": "binja-windbg-mcp",
+            "version": "0.2.0"
+          }
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"status\": \"ok\",\n  \"coordinate\": {\n    \"module\": \"mountmgr\",\n    \"image_name\": \"mountmgr.sys\",\n    \"identity\": {\n      \"timestamp\": 2826447139,\n      \"size\": 135168,\n      \"pdb\": {\n        \"guid\": \"93E8BD6D2EF58D8BB5E56FEC14491E6A\",\n        \"age\": 1\n      }\n    },\n    \"rva\": \"0x18eb4\"\n  },\n  \"modified\": false,\n  \"source\": \"current BinaryView\",\n  \"requested_size\": 32,\n  \"static_data\": \"16613491e10317aae00315aa12deff97fffeff1708018852a80da0727f02086b\",\n  \"runtime_data\": \"16613491e10317aae00315aa12deff97fffeff1708018852a80da0727f02086b\",\n  \"static_read_size\": 32,\n  \"runtime_read_size\": 32,\n  \"incomplete\": false,\n  \"equal\": true,\n  \"differing_offsets\": [],\n  \"relocation_ranges\": []\n}",
+            "annotations": null,
+            "_meta": null
+          }
+        ],
+        "structuredContent": {
+          "status": "ok",
+          "coordinate": {
+            "module": "mountmgr",
+            "image_name": "mountmgr.sys",
+            "identity": {
+              "timestamp": 2826447139,
+              "size": 135168,
+              "pdb": {
+                "guid": "93E8BD6D2EF58D8BB5E56FEC14491E6A",
+                "age": 1
+              }
+            },
+            "rva": "0x18eb4"
+          },
+          "modified": false,
+          "source": "current BinaryView",
+          "requested_size": 32,
+          "static_data": "16613491e10317aae00315aa12deff97fffeff1708018852a80da0727f02086b",
+          "runtime_data": "16613491e10317aae00315aa12deff97fffeff1708018852a80da0727f02086b",
+          "static_read_size": 32,
+          "runtime_read_size": 32,
+          "incomplete": false,
+          "equal": true,
+          "differing_offsets": [],
+          "relocation_ranges": []
+        },
+        "isError": false,
+        "resultType": "complete"
+      }
+    },
+    {
+      "server": "bn",
+      "tool": "set_breakpoint_here",
+      "arguments": {},
+      "elapsed_seconds": 0.01,
+      "result": {
+        "_meta": {
+          "io.modelcontextprotocol/serverInfo": {
+            "name": "binja-windbg-mcp",
+            "version": "0.2.0"
+          }
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"breakpoint\": {\n    \"address\": \"0xfffff800822b8eb4\",\n    \"deferred\": false,\n    \"enabled\": true,\n    \"id\": 0,\n    \"kind\": \"code\",\n    \"one_shot\": false,\n    \"pass_count\": 1,\n    \"passes_remaining\": 1\n  },\n  \"breakpoints\": [\n    {\n      \"address\": \"0xfffff800822b8eb4\",\n      \"deferred\": false,\n      \"enabled\": true,\n      \"id\": 0,\n      \"kind\": \"code\",\n      \"one_shot\": false,\n      \"pass_count\": 1,\n      \"passes_remaining\": 1\n    }\n  ],\n  \"cut_short\": false,\n  \"status\": \"ok\"\n}",
+            "annotations": null,
+            "_meta": null
+          }
+        ],
+        "structuredContent": {
+          "breakpoint": {
+            "address": "0xfffff800822b8eb4",
+            "deferred": false,
+            "enabled": true,
+            "id": 0,
+            "kind": "code",
+            "one_shot": false,
+            "pass_count": 1,
+            "passes_remaining": 1
+          },
+          "breakpoints": [
+            {
+              "address": "0xfffff800822b8eb4",
+              "deferred": false,
+              "enabled": true,
+              "id": 0,
+              "kind": "code",
+              "one_shot": false,
+              "pass_count": 1,
+              "passes_remaining": 1
+            }
+          ],
+          "cut_short": false,
+          "status": "ok"
+        },
+        "isError": false,
+        "resultType": "complete"
+      }
+    },
+    {
+      "server": "bn",
+      "tool": "run_to_here",
+      "arguments": {},
+      "elapsed_seconds": 0.02,
+      "result": {
+        "_meta": {
+          "io.modelcontextprotocol/serverInfo": {
+            "name": "binja-windbg-mcp",
+            "version": "0.2.0"
+          }
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"output\": \"g\\nBreakpoint 0 hit\\n\",\n  \"status\": \"ok\",\n  \"stopped_at\": \"0xfffff800822b8ec4\",\n  \"target\": \"0xfffff800822b8ec4\",\n  \"timeout_ms\": 60000,\n  \"verdict\": \"hit\"\n}",
+            "annotations": null,
+            "_meta": null
+          }
+        ],
+        "structuredContent": {
+          "output": "g\nBreakpoint 0 hit\n",
+          "status": "ok",
+          "stopped_at": "0xfffff800822b8ec4",
+          "target": "0xfffff800822b8ec4",
+          "timeout_ms": 60000,
+          "verdict": "hit"
+        },
+        "isError": false,
+        "resultType": "complete"
+      }
+    },
+    {
+      "server": "bn",
+      "tool": "unpair_windbg",
+      "arguments": {},
+      "elapsed_seconds": 0.002,
+      "result": {
+        "_meta": {
+          "io.modelcontextprotocol/serverInfo": {
+            "name": "binja-windbg-mcp",
+            "version": "0.2.0"
+          }
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"paired\": false\n}",
+            "annotations": null,
+            "_meta": null
+          }
+        ],
+        "structuredContent": {
+          "paired": false
+        },
+        "isError": false,
+        "resultType": "complete"
+      }
+    },
+    {
+      "server": "windbg",
+      "tool": "break_in",
+      "arguments": {
+        "execution": "exec-18d2cfedfb4fe508-10",
+        "session_id": "sess-18d2cf16bb55b784-5"
+      },
+      "elapsed_seconds": 0.006,
+      "result": {
+        "_meta": null,
+        "content": [
+          {
+            "type": "text",
+            "text": "Interrupted. Ctrl+Break was raised on this session's engine, so the operation it was running stops at its next poll and returns whatever it had reached \u2014 to the call that started it, not to this one. A command that never polls, and a live-kernel attach whose target has not connected, cannot be reached this way; `end_session` is what ends those.",
+            "annotations": null,
+            "_meta": null
+          }
+        ],
+        "structuredContent": {
+          "detail": "Interrupted. Ctrl+Break was raised on this session's engine, so the operation it was running stops at its next poll and returns whatever it had reached \u2014 to the call that started it, not to this one. A command that never polls, and a live-kernel attach whose target has not connected, cannot be reached this way; `end_session` is what ends those.",
+          "execution": "exec-18d2cfedfb4fe508-10",
+          "requested": true,
+          "session_id": "sess-18d2cf16bb55b784-5",
+          "status": "ok"
+        },
+        "isError": false,
+        "resultType": "complete"
+      }
+    },
+    {
+      "server": "bn",
+      "tool": "unpair_windbg",
+      "arguments": {},
+      "elapsed_seconds": 0.003,
+      "result": {
+        "_meta": {
+          "io.modelcontextprotocol/serverInfo": {
+            "name": "binja-windbg-mcp",
+            "version": "0.2.0"
+          }
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"paired\": false\n}",
+            "annotations": null,
+            "_meta": null
+          }
+        ],
+        "structuredContent": {
+          "paired": false
+        },
+        "isError": false,
+        "resultType": "complete"
+      }
+    }
+  ],
+  "query": {
+    "Device": "\\\\.\\MountPointManager",
+    "Sddl": null,
+    "Administrator": true,
+    "Opened": true,
+    "QuerySucceeded": true,
+    "DesiredAccess": 0,
+    "Code": 7143484,
+    "Returned": 4,
+    "Error": 0,
+    "QueryError": 0,
+    "Data": "01000000"
+  },
+  "module_replacement": {
+    "before": {
+      "checksum": 0,
+      "end": "0x00007ffe6b233000",
+      "image_name": "C:\\Windows\\Temp\\bnmcp-module-acceptance\\a\\bridge_fixture.dll",
+      "name": "bridge_fixture",
+      "size": 12288,
+      "start": "0x00007ffe6b230000",
+      "symbols": "deferred",
+      "timestamp": 1788700001,
+      "user_mode": true
+    },
+    "after": {
+      "checksum": 0,
+      "end": "0x00007ffe6b233000",
+      "image_name": "C:\\Windows\\Temp\\bnmcp-module-acceptance\\b\\bridge_fixture.dll",
+      "name": "bridge_fixture",
+      "size": 12288,
+      "start": "0x00007ffe6b230000",
+      "symbols": "deferred",
+      "timestamp": 1788720949,
+      "user_mode": true
+    },
+    "coordinate": {
+      "module": "bridge_fixture",
+      "image_name": "bridge_fixture.dll",
+      "identity": {
+        "timestamp": 1788700001,
+        "size": 12288,
+        "pdb": null
+      },
+      "rva": "0x1000"
+    },
+    "same_load_base": true,
+    "all_three_guarded_actions_refused": true,
+    "breakpoints_unchanged": true,
+    "instruction_pointer_unchanged": true
+  },
+  "connection_failures": {
+    "reconnect_revalidated_module": true,
+    "late_poll_after_unpair_discarded": true,
+    "authentication_failure_stopped_polling": true,
+    "mutation_timeout_uncertain_without_retry": true
+  },
+  "analysis_cancellation": {
+    "busy_state": "DisassembleState",
+    "registered_waiters": 1,
+    "after_cancel_waiters": 0,
+    "completion_after_cancel": "success"
+  },
+  "evidence_undo": {
+    "before": {
+      "comment": "",
+      "modified": false
+    },
+    "appended": {
+      "comment": "[windbg-evidence] {\"architecture\": \"aarch64\", \"coordinate\": {\"identity\": {\"pdb\": {\"age\": 1, \"guid\": \"93E8BD6D2EF58D8BB5E56FEC14491E6A\"}, \"size\": 135168, \"timestamp\": 2826447139}, \"image_name\": \"mountmgr.sys\", \"module\": \"mountmgr\", \"rva\": \"0x18910\"}, \"file_sha256\": null, \"note\": \"Read-only mountmgr query observed during live acceptance.\", \"processor\": 1, \"profile\": \"live-acceptance\", \"runtime_address\": \"0xfffff800822b8910\", \"session_id\": \"sess-18d2cf16bb55b784-5\", \"thread\": null, \"timestamp\": \"2026-09-06T18:53:20.872969+00:00\"}"
+    },
+    "undone": {
+      "comment": "",
+      "modified": false
+    }
+  },
+  "native_symbol_edit": {
+    "name": "MountMgrDeviceControlAcceptance"
+  },
+  "native_type_undo": {
+    "removed": true
+  },
+  "menus": {
+    "stop": {
+      "before": {
+        "Start": false,
+        "Stop": true,
+        "Status": true,
+        "Connection Information": true
+      },
+      "state": "listening",
+      "after_request": {
+        "Start": false,
+        "Stop": false
+      }
+    },
+    "restart": {
+      "stopped": {
+        "Start": true,
+        "Stop": false,
+        "Status": true,
+        "Connection Information": true
+      },
+      "starting": {
+        "Start": false,
+        "Stop": true
+      }
+    }
+  },
+  "close_and_rebase": {
+    "stale_rebase_revalidated_before_next_poll": true,
+    "closed_view_removed": true,
+    "late_poll_after_close_refused": true,
+    "focused_action_after_close_refused": true,
+    "reopened_id_changed": true,
+    "reopened_base": "0x0000000140000000"
+  },
+  "paired_shutdown": {
+    "normal_quit": {
+      "shutting_down": true,
+      "listener_state": "stopped",
+      "listener_thread_alive": false,
+      "pairing": {
+        "paired": false
+      }
+    },
+    "listener_port_closed": true,
+    "debugger_session_survived_plugin_quit": true,
+    "owned_session_released_after_verification": {
+      "released": true,
+      "session_id": "sess-18d2cf16bb55b784-5",
+      "status": "ok",
+      "worker_terminated": true
+    }
+  },
+  "cleanup": {
+    "shipped_access_probe_passed": true,
+    "remaining_temporary_accounts": 0,
+    "debugger_fixture_removed": true
+  }
+}
