@@ -4,6 +4,8 @@ from collections import deque
 
 from .core import ioctl_case
 
+DRIVER_TOOLS = ("driver_entry", "sink_imports", "device_security", "ioctl_map", "driver_surface")
+
 SINK_VERSION = 1
 SINKS = {
     "memcpy": "copy",

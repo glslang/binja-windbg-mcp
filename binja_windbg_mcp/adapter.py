@@ -1,4 +1,4 @@
-"""Binary Ninja 5.3 UI boundary. View references live only for the duration of a job."""
+"""Binary Ninja 6 UI boundary. View references live only for the duration of a job."""
 
 from __future__ import annotations
 
@@ -272,190 +272,39 @@ class Workspace:
                 if (loop, done) in waiting:
                     waiting.remove((loop, done))
 
-    def query(
-        self,
-        name,
-        binary_id,
-        rva="0x0",
-        limit=200,
-        representation="auto",
-        text="",
-        depth=2,
-        function_limit=128,
-        traverse=False,
-        budget=None,
-    ):
+    def query(self, name, binary_id, *, depth=2, function_limit=128, traverse=False, budget=None):
+        if name not in analysis.DRIVER_TOOLS:
+            raise ValueError("general analysis belongs to Binary Ninja's native MCP server")
         budget = budget or Budget()
-        key, view, active, _ = self.acquire(binary_id)
+        key, view, _, _ = self.acquire(binary_id)
         stamp = self.stamp(key, view)
         identity, _ = pe_identity(view.file.raw.read)
-        address = Coordinate(
-            module="image", image_name="image", identity=identity, rva=rva
-        ).address(view.start, identity)
-        limit = min(max(limit, 1), 1000)
-        cache_key = (
-            stamp,
-            identity.timestamp,
-            identity.size,
-            name,
-            rva,
-            limit,
-            representation,
-            text,
-            depth,
-            function_limit,
-            traverse,
-        )
+        cache_key = (stamp, identity.model_dump_json(), name, depth, function_limit, traverse)
         with self._lock:
             cached = self._cache.get(cache_key)
         if cached is not None:
             latest_key, latest_view, _, _ = self.acquire(binary_id)
             if latest_key != key or self.stamp(latest_key, latest_view) != stamp:
                 raise ValueError("cached analysis became stale")
-            return copy.deepcopy(cached)
-        if name in (
-            "driver_entry",
-            "sink_imports",
-            "device_security",
-            "ioctl_map",
-            "driver_surface",
-        ):
-            capture = capture_driver(view, budget, imports_only=name == "sink_imports")
-            options = (
-                {"depth": depth, "function_limit": function_limit}
-                if name in ("ioctl_map", "driver_surface")
-                else {}
-            )
-            if name == "ioctl_map":
-                options["traverse"] = traverse
-            # Capture has its own bounded deadline; retained facts can still form partial sections.
-            analysis_budget = Budget(seconds=2, cancel=budget.cancel)
-            result = getattr(analysis, name)(capture, analysis_budget, **options)
-            if capture.get("truncated"):
-                result["capture_truncated"] = True
-                result["capture_stop"] = capture.get("capture_stop", "function or fact limit")
-                if name != "driver_surface":
-                    result["status"] = "partial"
-        elif name == "search":
-            rows = []
-            for symbol in view.get_symbols():
-                budget.check()
-                if text.casefold() in symbol.full_name.casefold():
-                    rows.append(
-                        {
-                            "kind": "symbol",
-                            "name": symbol.full_name,
-                            "rva": hex(symbol.address - view.start),
-                        }
-                    )
-                    if len(rows) > limit:
-                        break
-            result = {"matches": rows[:limit], "truncated": len(rows) > limit, "scope": "symbols"}
-        elif name == "xrefs":
-            rows = []
-            for ref in view.get_code_refs(address):
-                budget.check()
-                rows.append({"kind": "code", "rva": hex(ref.address - view.start)})
-                if len(rows) > limit:
-                    break
-            if len(rows) <= limit:
-                for ref in view.get_data_refs(address):
-                    budget.check()
-                    rows.append({"kind": "data", "rva": hex(ref - view.start)})
-                    if len(rows) > limit:
-                        break
-            result = {"references": rows[:limit], "truncated": len(rows) > limit}
-        else:
-            functions = view.get_functions_containing(address)
-            if len(functions) != 1:
-                raise ValueError("address must identify one function")
-            function = functions[0]
-            if name == "function_info":
-                result = {
-                    "name": function.name,
-                    "rva": hex(function.start - view.start),
-                    "type": str(function.type),
-                    "architecture": function.arch.name,
-                }
-            elif name == "function_cfg":
-                rows = []
-                for block in function.basic_blocks:
-                    budget.check()
-                    rows.append(
-                        {
-                            "start_rva": hex(block.start - view.start),
-                            "end_rva": hex(block.end - view.start),
-                            "edges": [
-                                {
-                                    "type": e.type.name,
-                                    "target_rva": hex(e.target.start - view.start),
-                                }
-                                for e in block.outgoing_edges
-                            ],
-                        }
-                    )
-                    if len(rows) > limit:
-                        break
-                result = {"blocks": rows[:limit], "truncated": len(rows) > limit}
-            elif name == "get_code":
-                choices = (
-                    ("hlil", "mlil", "llil", "disassembly")
-                    if representation == "auto"
-                    else (representation,)
-                )
-                selected, il = None, None
-                for choice in choices:
-                    il = None if choice == "disassembly" else getattr(function, choice)
-                    if il is not None or choice == "disassembly":
-                        selected = choice
-                        break
-                if selected is None:
-                    return {"status": "unavailable", "reason": "requested IL not available"}
-                rows = []
-                if selected == "disassembly":
-                    for block in function.basic_blocks:
-                        offset = block.start
-                        for tokens, length in block:
-                            budget.check()
-                            rows.append(
-                                {
-                                    "address": f"0x{offset:016x}",
-                                    "rva": hex(offset - view.start),
-                                    "text": "".join(str(t) for t in tokens)[:4096],
-                                }
-                            )
-                            offset += length
-                            if len(rows) > limit:
-                                break
-                        if len(rows) > limit:
-                            break
-                else:
-                    for instruction in il.instructions:
-                        budget.check()
-                        rows.append(
-                            {
-                                "address": f"0x{instruction.address:016x}",
-                                "rva": hex(instruction.address - view.start),
-                                "text": str(instruction)[:4096],
-                            }
-                        )
-                        if len(rows) > limit:
-                            break
-                result = {
-                    "representation": selected,
-                    "lines": rows[:limit],
-                    "truncated": len(rows) > limit,
-                }
-            else:
-                raise ValueError("unknown analysis operation")
-        if name not in (
-            "driver_entry",
-            "sink_imports",
-            "device_security",
-            "ioctl_map",
-            "driver_surface",
-        ):
             budget.check()
+            return copy.deepcopy(cached)
+        capture = capture_driver(view, budget, imports_only=name == "sink_imports")
+        options = (
+            {"depth": depth, "function_limit": function_limit}
+            if name in ("ioctl_map", "driver_surface")
+            else {}
+        )
+        if name == "ioctl_map":
+            options["traverse"] = traverse
+        # Retained facts can still form partial sections when capture reached its deadline.
+        result = getattr(analysis, name)(
+            capture, Budget(seconds=2, cancel=budget.cancel), **options
+        )
+        if capture.get("truncated"):
+            result["capture_truncated"] = True
+            result["capture_stop"] = capture.get("capture_stop", "function or fact limit")
+            if name != "driver_surface":
+                result["status"] = "partial"
         current_key, current_view, _, _ = self.acquire(binary_id)
         if key != current_key or stamp != self.stamp(current_key, current_view):
             raise ValueError("analysis became stale; repeat on the current view")
@@ -465,103 +314,33 @@ class Workspace:
             self._cache[cache_key] = copy.deepcopy(result)
         return result
 
-    def edit(
-        self,
-        name,
-        binary_id,
-        rva,
-        text="",
-        append=True,
-        evidence=None,
-        target="function",
-        expected_coordinate=None,
-    ):
-        import binaryninja as bn
-
+    def add_evidence(self, binary_id, coordinate, evidence, expected_generation):
         def action():
             key, view, _, _ = self.acquire(binary_id)
+            if tuple(expected_generation) != self.stamp(key, view):
+                raise ValueError("view generation changed before evidence edit")
             identity, _ = pe_identity(view.file.raw.read)
-            coordinate = Coordinate(module="image", image_name="image", identity=identity, rva=rva)
             address = coordinate.address(view.start, identity)
-            if not view.is_valid_offset(address):
-                raise ValueError("unmapped edit location")
-            coordinate = self.coordinate(view, address)
-            if expected_coordinate is not None:
-                expected_coordinate.address(view.start, identity)
-            function = view.get_function_at(address)
-            if (
-                name in ("rename_symbol", "apply_type")
-                and target == "function"
-                and function is None
-            ):
-                raise ValueError("function edits require a function start")
-            if (
-                name in ("rename_symbol", "apply_type")
-                and target == "data"
-                and function is not None
-            ):
-                raise ValueError("data target overlaps a function start")
+            actual = self.coordinate(view, address)
+            image = coordinate.image_name.replace("\\", "/").rsplit("/", 1)[-1]
+            if image.casefold() != actual.image_name.casefold():
+                raise ValueError("evidence image name mismatch")
+            record = dict(evidence, coordinate=actual.model_dump())
             undo = view.begin_undo_actions()
             try:
-                if name == "set_comment":
-                    previous = view.get_comment_at(address)
-                    view.set_comment_at(
-                        address, previous + "\n" + text if append and previous else text
-                    )
-                elif name == "add_evidence":
-                    record = dict(evidence or {}, coordinate=coordinate.model_dump())
-                    # Evidence is represented as a user comment: persistent and undoable.
-                    previous = view.get_comment_at(address)
-                    view.set_comment_at(
-                        address,
-                        (previous + "\n" if previous else "")
-                        + "[windbg-evidence] "
-                        + json.dumps(record, sort_keys=True),
-                    )
-                elif name == "rename_symbol":
-                    if not text or len(text) > 512:
-                        raise ValueError("invalid symbol name")
-                    if target == "function":
-                        function.name = text
-                    else:
-                        view.define_user_symbol(bn.Symbol(bn.SymbolType.DataSymbol, address, text))
-                elif name == "apply_type":
-                    value = view.get_type_by_name(text)
-                    provider = "database"
-                    if value is None:
-                        candidates = [
-                            library
-                            for library in view.type_libraries
-                            if library.get_named_type(text) is not None
-                        ]
-                        if len(candidates) != 1:
-                            raise ValueError(
-                                "named type absent or ambiguous among available libraries"
-                            )
-                        provider = candidates[0].name
-                        value = view.import_type_library_type(text, candidates[0])
-                    if value is None:
-                        raise ValueError("named type import failed")
-                    if target == "function":
-                        function.type = value
-                    else:
-                        view.define_user_data_var(address, value)
-                else:
-                    raise ValueError("unknown edit")
+                previous = view.get_comment_at(address)
+                view.set_comment_at(
+                    address,
+                    (previous + "\n" if previous else "")
+                    + "[windbg-evidence] "
+                    + json.dumps(record, sort_keys=True),
+                )
                 view.commit_undo_actions(undo)
             except BaseException:
                 view.revert_undo_actions(undo)
                 raise
             self.invalidate(key)
-            return {
-                "status": "success",
-                "coordinate": coordinate.model_dump(),
-                **(
-                    {"type_provider": provider, "architecture": view.arch.name}
-                    if name == "apply_type"
-                    else {}
-                ),
-            }
+            return {"status": "success", "coordinate": actual.model_dump()}
 
         return main_thread(action)
 

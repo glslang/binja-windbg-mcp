@@ -148,7 +148,7 @@ def test_profiles_symlink_refused(tmp_path):
 
 def test_groups_exactly_once():
     names = [name for group in GROUPS.values() for name in group]
-    assert len(names) == len(set(names)) == 24
+    assert len(names) == len(set(names)) == 16
     assert selected_tools("debug") == set(GROUPS["workspace"] + GROUPS["pair"] + GROUPS["debug"])
     with pytest.raises(ValueError):
         selected_tools("typo")
@@ -163,3 +163,9 @@ def test_pdb_matching_rejects_unmatched_and_age_mismatch():
     for pdb in ({"guid": "ABCD", "age": 2}, {"guid": "ABCD", "age": 1, "unmatched": True}):
         with pytest.raises(ValueError):
             coordinate.address(0, Identity(timestamp=1, size=4096, pdb=pdb))
+
+
+@pytest.mark.parametrize("spec", ["analysis", "edit", "workspace,edit", "debug,analysis"])
+def test_retired_groups_explain_native_mcp_migration(spec):
+    with pytest.raises(ValueError, match="retired.*native MCP"):
+        selected_tools(spec)

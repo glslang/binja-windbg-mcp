@@ -48,7 +48,7 @@ def test_sdk_interoperability_auth_and_restart(tmp_path):
             async with Client(streamable_http_client(url, http_client=http)) as client:
                 listed = await client.list_tools()
                 names = sorted(tool.name for tool in listed.tools)
-                assert len(names) == 24
+                assert len(names) == 16
                 result = await client.call_tool("list_binaries", {})
                 assert result.structured_content == {"binaries": []}
                 surface = [
@@ -74,3 +74,13 @@ def test_sdk_interoperability_auth_and_restart(tmp_path):
     listener.stop()
     listener.thread.join(10)
     assert listener.state == "stopped"
+
+
+def test_retired_profile_group_fails_before_binding_with_migration_guidance(tmp_path):
+    profiles = Profiles(tmp_path)
+    profiles._data["groups"] = "workspace,edit"
+    listener = Listener(Workspace(), profiles, port=0)
+    with pytest.raises(ValueError, match="retired.*native MCP"):
+        listener.start()
+    assert listener.thread is None
+    assert "evidence" in listener.state

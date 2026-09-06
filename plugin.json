@@ -1,12 +1,20 @@
 {
   "pluginmetadataversion": 2,
-  "name": "Binary Ninja–WinDbg MCP Bridge",
-  "type": ["ui"],
-  "api": ["python3"],
-  "description": "Authenticated loopback MCP for PE analysis and explicit WinDbg pairing",
-  "longdescription": "Python 3.10 UI plugin using the official MCP v2 SDK. See README.md for dependency installation and validation status.",
-  "license": {"name": "MIT"},
-  "platforms": ["Darwin"],
-  "version": "0.1.0",
-  "minimumbinaryninjaversion": 9757
+  "name": "Binary Ninja\u2013WinDbg MCP Companion",
+  "type": [
+    "ui"
+  ],
+  "api": [
+    "python3"
+  ],
+  "description": "PE coordinates, driver evidence and explicit WinDbg pairing alongside native MCP",
+  "longdescription": "Binary Ninja 6 / Python 3.13 UI companion using the official MCP v2 SDK. General inspection and editing use native MCP. See README.md for installation and validation status.",
+  "license": {
+    "name": "MIT"
+  },
+  "platforms": [
+    "Darwin"
+  ],
+  "version": "0.2.0",
+  "minimumbinaryninjaversion": 10601
 }

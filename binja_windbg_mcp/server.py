@@ -7,7 +7,6 @@ import hmac
 import socket
 import threading
 from datetime import datetime, timezone
-from typing import Literal
 
 import uvicorn
 from mcp.server import MCPServer
@@ -16,20 +15,20 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from .core import Budget, Coordinate
 from .pairing import Pairing
-from .results import CfgResult, CodeResult, SearchResult, XrefResult
 
 GROUPS = {
     "workspace": ("list_binaries", "current_location", "navigate", "wait_for_analysis"),
-    "analysis": ("get_code", "function_info", "function_cfg", "xrefs", "search"),
     "driver": ("driver_entry", "sink_imports", "device_security", "ioctl_map", "driver_surface"),
-    "edit": ("set_comment", "add_evidence", "rename_symbol", "apply_type"),
+    "evidence": ("add_evidence",),
     "pair": ("pair_windbg", "windbg_pair_status", "unpair_windbg"),
     "debug": ("set_breakpoint_here", "run_to_here", "compare_runtime_bytes"),
 }
 
 
 def selected_tools(spec):
-    groups = set(GROUPS) if spec == "all" else set(spec.split(","))
+    groups = set(GROUPS) if spec == "all" else {group.strip() for group in spec.split(",")}
+    if groups & {"analysis", "edit"}:
+        raise ValueError("analysis/edit groups were retired; use native MCP and the evidence group")
     if groups - GROUPS.keys():
         raise ValueError("unknown tool group")
     groups.add("workspace")
@@ -49,7 +48,19 @@ class Evidence(BaseModel):
 
 
 def make_server(workspace, profiles):
-    server = MCPServer("binja-windbg-mcp", version="0.1.0")
+    server = MCPServer(
+        "binja-windbg-mcp",
+        version="0.2.0",
+        instructions=(
+            "Companion to Binary Ninja 6 native MCP. Use native MCP for general inspection, "
+            "file management, comments, symbol/variable edits and types. Use this server for "
+            "PE coordinates, driver evidence and explicit WinDbg pairing. Binary IDs from "
+            "list_binaries belong to this companion; native binaryView handles are not valid "
+            "here. Native active-view selection is shared across clients. This server uses "
+            "the Binary Ninja API directly with explicit binary IDs, never the native active "
+            "view. File paths describe files; debugger mapping requires PE identity and RVA."
+        ),
+    )
     pairing = Pairing(workspace, profiles)
     selected = selected_tools(profiles.groups)
 
@@ -61,10 +72,10 @@ def make_server(workspace, profiles):
                     fn,
                     structured_output=True,
                     annotations=ToolAnnotations(
-                        read_only_hint=group not in ("edit", "debug")
+                        read_only_hint=group not in ("evidence", "debug")
                         and fn.__name__ not in ("navigate", "pair_windbg", "unpair_windbg"),
                         destructive_hint=fn.__name__ == "run_to_here",
-                        idempotent_hint=group not in ("edit", "debug"),
+                        idempotent_hint=group not in ("evidence", "debug"),
                         open_world_hint=False,
                     ),
                 )
@@ -101,40 +112,6 @@ def make_server(workspace, profiles):
         """Wait for analysis completion, with cancellation and a bounded deadline."""
         return await workspace.wait_for_analysis(binary_id, timeout_ms)
 
-    @tool("analysis")
-    async def get_code(
-        binary_id: str,
-        rva: str,
-        representation: Literal["auto", "disassembly", "llil", "mlil", "hlil"] = "auto",
-        limit: int = 200,
-    ) -> CodeResult:
-        """Get bounded function code with source addresses and the actual representation."""
-        return CodeResult.model_validate(
-            await query("get_code", binary_id, rva=rva, representation=representation, limit=limit)
-        )
-
-    @tool("analysis")
-    async def function_info(binary_id: str, rva: str) -> dict[str, object]:
-        """Get the containing function's identity and type."""
-        return await query("function_info", binary_id, rva=rva)
-
-    @tool("analysis")
-    async def function_cfg(binary_id: str, rva: str, limit: int = 200) -> CfgResult:
-        """Get bounded basic blocks and typed control-flow edges."""
-        return CfgResult.model_validate(
-            await query("function_cfg", binary_id, rva=rva, limit=limit)
-        )
-
-    @tool("analysis")
-    async def xrefs(binary_id: str, rva: str, limit: int = 200) -> XrefResult:
-        """Get bounded incoming code and data references."""
-        return XrefResult.model_validate(await query("xrefs", binary_id, rva=rva, limit=limit))
-
-    @tool("analysis")
-    async def search(binary_id: str, text: str, limit: int = 200) -> SearchResult:
-        """Search symbol names, reporting the scope and truncation."""
-        return SearchResult.model_validate(await query("search", binary_id, text=text, limit=limit))
-
     @tool("driver")
     async def driver_entry(binary_id: str) -> dict[str, object]:
         """Recover supported dispatch registrations and unresolved WDM/KMDF callbacks."""
@@ -166,16 +143,7 @@ def make_server(workspace, profiles):
         """Compose dispatch, imports, security, and IOCTL evidence, retaining section failures."""
         return await query("driver_surface", binary_id, depth=depth, function_limit=function_limit)
 
-    @tool("edit")
-    async def set_comment(
-        binary_id: str, rva: str, text: str, append: bool = True
-    ) -> dict[str, object]:
-        """Explicitly append or replace an undoable comment."""
-        if len(text) > 8192:
-            raise ValueError("comment exceeds 8192 characters")
-        return await asyncio.to_thread(workspace.edit, "set_comment", binary_id, rva, text, append)
-
-    @tool("edit")
+    @tool("evidence")
     async def add_evidence(
         binary_id: str, coordinate: Coordinate, evidence: Evidence
     ) -> dict[str, object]:
@@ -196,30 +164,11 @@ def make_server(workspace, profiles):
             file_sha256=snapshot.get("file_sha256"),
         )
         return await asyncio.to_thread(
-            workspace.edit,
-            "add_evidence",
+            workspace.add_evidence,
             binary_id,
-            coordinate.rva,
-            evidence=record,
-            expected_coordinate=coordinate,
-        )
-
-    @tool("edit")
-    async def rename_symbol(
-        binary_id: str, rva: str, name: str, target: Literal["function", "data"] = "function"
-    ) -> dict[str, object]:
-        """Explicitly rename a function or data symbol in an undoable edit."""
-        return await asyncio.to_thread(
-            workspace.edit, "rename_symbol", binary_id, rva, name, target=target
-        )
-
-    @tool("edit")
-    async def apply_type(
-        binary_id: str, rva: str, name: str, target: Literal["function", "data"] = "function"
-    ) -> dict[str, object]:
-        """Explicitly import an available named type and apply it in an undoable edit."""
-        return await asyncio.to_thread(
-            workspace.edit, "apply_type", binary_id, rva, name, target=target
+            coordinate,
+            record,
+            snapshot["generation"],
         )
 
     @tool("pair")
@@ -309,6 +258,11 @@ class Listener:
         with self._lock:
             if self.thread and self.thread.is_alive():
                 return
+            try:
+                selected_tools(self.profiles.groups)
+            except ValueError as error:
+                self.state = f"startup failed: {error}"
+                raise
             sock = socket.socket()
             try:
                 sock.bind(("127.0.0.1", self.port))

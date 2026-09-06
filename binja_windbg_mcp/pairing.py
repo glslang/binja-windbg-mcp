@@ -104,11 +104,13 @@ class Pairing:
         if len(matches) != 1:
             raise ValueError("selected PE identity missing or ambiguous in debugger")
         module = matches[0]
-        expected = snapshot.get("coordinate")
+        expected_image = snapshot.get("image_name") or (snapshot.get("coordinate") or {}).get(
+            "image_name"
+        )
         if (
-            expected
-            and module["image_name"].replace("\\", "/").rsplit("/", 1)[-1].casefold()
-            != expected["image_name"].casefold()
+            not expected_image
+            or module["image_name"].replace("\\", "/").rsplit("/", 1)[-1].casefold()
+            != expected_image.casefold()
         ):
             raise ValueError("selected image name mismatch")
         remote_identity = Identity(

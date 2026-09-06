@@ -1,6 +1,6 @@
 # Real analysis acceptance captures
 
-This directory is reserved for immutable captures made by the Binary Ninja 5.3 adapter.
+This directory is reserved for immutable captures made by the Binary Ninja 6 adapter.
 There are currently **no real driver captures** here. Synthetic tests are in test_core.py
 and test_adapter.py and must not be represented as HEVD or mountmgr validation.
 

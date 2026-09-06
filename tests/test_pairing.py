@@ -116,3 +116,38 @@ def test_pairing_serializes_follows_only_changes_and_never_retries_mutation(monk
         assert len(mutations) == 1
 
     asyncio.run(check())
+
+
+def test_pair_validation_checks_image_name_without_an_active_cursor():
+    import pytest
+
+    server = MCPServer("windbg-test")
+    module_row = {"name": "other", "image_name": "other.sys", **IDENTITY}
+
+    @server.tool(structured_output=True)
+    async def modules(session_id: str, limit: int) -> dict[str, object]:
+        return {"status": "ok", "modules": [module_row]}
+
+    @server.tool(structured_output=True)
+    async def current_location(session_id: str) -> dict[str, object]:
+        return {"status": "ok"}
+
+    class InactiveWorkspace(Workspace):
+        def current_location(self, binary_id):
+            return {
+                **super().current_location(binary_id),
+                "coordinate": None,
+                "image_name": "driver.sys",
+            }
+
+    async def check():
+        pair = Pairing(InactiveWorkspace(), Profiles())
+        pair.state = {"binary_id": "binary", "session_id": "session"}
+        async with Client(server) as client:
+            with pytest.raises(ValueError, match="image name mismatch"):
+                await pair._validate(client)
+            module_row.update(name="driver", image_name="driver.sys")
+            await pair._validate(client)
+            assert pair.module["name"] == "driver"
+
+    asyncio.run(check())

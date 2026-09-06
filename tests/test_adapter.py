@@ -112,3 +112,100 @@ def test_analysis_wait_cancellation_releases_subscription(monkeypatch):
         assert workspace._waiters[(1, "PE")] == []
 
     asyncio.run(check())
+
+
+def test_explicit_binary_queries_ignore_shared_active_view_and_refresh_after_edits(monkeypatch):
+    import pytest
+
+    from binja_windbg_mcp import adapter
+    from binja_windbg_mcp.core import Identity
+
+    workspace = Workspace()
+    keys = [(1, "PE"), (2, "PE")]
+    workspace._ids = dict(zip(keys, ["one", "two"]))
+    views = [N(start=0x1000, file=N(raw=N(read=None))), N(start=0x5000, file=N(raw=N(read=None)))]
+    active = [0]
+    calls = []
+    monkeypatch.setattr(adapter, "main_thread", lambda fn: fn())
+    monkeypatch.setattr(
+        adapter, "pe_identity", lambda _: (Identity(timestamp=1, size=0x3000), "x86_64")
+    )
+    monkeypatch.setattr(
+        workspace,
+        "_views",
+        lambda: [(k, v, i == active[0], v.start) for i, (k, v) in enumerate(zip(keys, views))],
+    )
+
+    def capture(view, budget, imports_only):
+        calls.append(view.start)
+        return {"imports": {"ProbeForRead": hex(view.start)}}
+
+    monkeypatch.setattr(adapter, "capture_driver", capture)
+    first = workspace.query("sink_imports", "one")
+    active[0] = 1
+    again = workspace.query("sink_imports", "one")
+    assert first == again and calls == [0x1000]
+    again["imports"].clear()
+    assert workspace.query("sink_imports", "one")["imports"]
+    workspace.invalidate(keys[0])  # Native symbol/type edits trigger the same notifications.
+    workspace.query("sink_imports", "one")
+    assert calls == [0x1000, 0x1000]
+    with pytest.raises(ValueError, match="unambiguous"):
+        workspace.query("sink_imports", "view_1")  # Native MCP handles are a different namespace.
+    with pytest.raises(ValueError, match="native MCP"):
+        workspace.query("get_code", "one")
+
+
+def test_evidence_edit_is_pinned_and_rejects_stale_or_mismatched_provenance(monkeypatch):
+    import json
+
+    import pytest
+
+    from binja_windbg_mcp import adapter
+    from binja_windbg_mcp.core import Coordinate, Identity
+
+    monkeypatch.setattr(adapter, "main_thread", lambda fn: fn())
+    identity = Identity(timestamp=1, size=0x3000)
+    monkeypatch.setattr(adapter, "pe_identity", lambda _: (identity, "x86_64"))
+    workspace = Workspace()
+    key = (1, "PE")
+    workspace._ids[key] = "paired"
+    text, undo = ["existing comment"], []
+    view = N(
+        start=0x180000000,
+        file=N(raw=N(read=None), original_filename="driver.sys"),
+        is_valid_offset=lambda address: True,
+        begin_undo_actions=lambda: undo.append("begin") or "group",
+        commit_undo_actions=lambda group: undo.append("commit"),
+        revert_undo_actions=lambda group: undo.append("revert"),
+        get_comment_at=lambda address: text[0],
+        set_comment_at=lambda address, value: text.__setitem__(0, value),
+    )
+    monkeypatch.setattr(workspace, "acquire", lambda binary: (key, view, False, None))
+    coordinate = Coordinate(
+        module="driver", image_name="driver.sys", identity=identity, rva="0x1000"
+    )
+    stamp = workspace.stamp(key, view)
+    workspace.invalidate(key)
+    with pytest.raises(ValueError, match="generation changed"):
+        workspace.add_evidence("paired", coordinate, {"note": "observed"}, stamp)
+    assert undo == []
+    for changed, message in (
+        ({"image_name": "other.sys"}, "image name"),
+        ({"identity": Identity(timestamp=2, size=0x3000)}, "identity"),
+    ):
+        with pytest.raises(ValueError, match=message):
+            workspace.add_evidence(
+                "paired", coordinate.model_copy(update=changed), {}, workspace.stamp(key, view)
+            )
+        assert undo == []
+    workspace.add_evidence(
+        "paired",
+        coordinate,
+        {"note": "observed", "file_sha256": "hash"},
+        workspace.stamp(key, view),
+    )
+    assert undo == ["begin", "commit"]
+    assert text[0].startswith("existing comment\n[windbg-evidence] ")
+    record = json.loads(text[0].split("[windbg-evidence] ")[1])
+    assert record["coordinate"]["rva"] == "0x1000" and record["file_sha256"] == "hash"

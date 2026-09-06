@@ -1,130 +1,160 @@
-# Binary Ninja–WinDbg MCP Bridge
+# Binary Ninja–WinDbg MCP Companion
 
-A Python UI plugin for Binary Ninja 5.3 Personal on Apple Silicon macOS. It uses the
-**official MCP Python SDK 2.1.1** for authenticated Streamable HTTP and the outbound
-WinDbg client. The implementation is under active validation; see the acceptance status
-below before relying on recovered driver mappings.
+A focused companion to **Binary Ninja 6 native MCP**, targeting Personal on Apple Silicon
+macOS and its Python 3.13 interpreter. Native MCP handles general inspection and editing.
+This plugin adds PE identity/RVA coordinates, structured driver evidence, and optional
+WinDbg following and focused actions. It uses the **official MCP Python SDK 2.1.1**.
 
-Workspace, static analysis, driver evidence, and editing work without a debugger. Pairing
-and focused runtime actions optionally connect to the separate
-[windbg-mcp server](https://github.com/glslang/windbg-mcp).
+Driver analysis works without WinDbg. The companion reads Binary Ninja's structured IL
+through its Python API; native MCP currently renders IL as text. It selects views by its
+own binary IDs because native MCP's active view is shared across clients. The companion
+does not proxy native MCP or control its settings, listener, or credentials.
 
 ## Installation
 
-Use a copy of this directory named `binja-windbg-mcp` in Binary Ninja's per-user plugins
-directory. Install `requirements.lock` into a Python 3.10 package directory visible to
-Binary Ninja's embedded interpreter. The lock contains exact versions and wheel hashes:
+Use this repository as a directory named `binja-windbg-mcp` in Binary Ninja's per-user
+plugins directory. Version 0.2 requires Binary Ninja **6.0.10601 or later** with **Python
+3.13**. Install the hash-pinned dependencies into a fresh Python 3.13 package directory
+visible to Binary Ninja's embedded interpreter:
 
 ```console
-python3.10 -m pip install --require-hashes -r requirements.lock --target /path/to/plugin-dependencies
+python3.13 -m pip install --require-hashes -r requirements.lock --target /path/to/companion-dependencies
 ```
 
-Add that dependency directory to Binary Ninja's Python path before loading the plugin.
-Do not use a Python 3.11+ wheel environment for the embedded 3.10 interpreter. Restart
-Binary Ninja after installing dependencies. This repository does not install into or
-modify the application bundle automatically.
+Add that directory to Binary Ninja's Python path before loading the plugin, then restart.
+Replace the old Python 3.10 dependency environment when migrating from 0.1. Installing
+the companion does not install packages into the Binary Ninja application bundle.
 
-The listener autostarts at `http://127.0.0.1:8766/mcp`. The **WinDbg MCP** menu provides
-Start, Stop, Status, and Connection Information. Port collisions produce a visible failure.
-Stop finishes asynchronously so active jobs can release the UI thread; Start works after
-Status reports stopped. Only `/mcp` is served; no stdio or legacy `/sse` endpoint exists.
+The companion autostarts at `http://127.0.0.1:8766/mcp`. The **WinDbg MCP** menu provides
+Start, Stop, Status, and Connection Information. Port collisions are visible startup
+failures. Stop is asynchronous; Start works after Status reports stopped. Only `/mcp`
+is served. Native Binary Ninja MCP is a separate server, normally on port `24642`.
 
-On first startup, the plugin creates `binja-windbg-mcp/profiles.json` under Binary Ninja's
-user data directory. It has mode `0600` and contains a 32-byte random token encoded in hex.
-Configure the MCP host with `Authorization: Bearer <token>` in its HTTP headers. Connection
-Information shows the credential file location, never the token. Keep this file private.
+First startup creates `binja-windbg-mcp/profiles.json` under Binary Ninja's user data
+directory, with mode `0600` and a generated 32-byte bearer token encoded in hex. Configure
+the host with `Authorization: Bearer <token>` for the companion. Connection Information
+shows the credential file location, never its contents.
 
-## Profiles and groups
+## Native MCP and migration from 0.1
 
-Edit `profiles.json` locally while the listener is stopped, then restart Binary Ninja:
+Configure the MCP host with native Binary Ninja MCP, this companion, and optionally
+[windbg-mcp](https://github.com/glslang/windbg-mcp). Each connection has its own endpoint
+and credential configuration. The tested native surface and its limits are recorded in
+[the native MCP test drive](docs/binja6-native-mcp-test-drive.md).
+
+| Removed companion tools | Use native MCP instead |
+|---|---|
+| `get_code` | `bn_function_disassembly`, `bn_function_il`, `bn_function_decompile` |
+| `function_info`, `function_cfg` | `bn_function_info`, `bn_function_basic_blocks` |
+| `xrefs` | Native function and data reference tools, choosing the required direction |
+| `search` | `bn_function_search`, `bn_symbol_list` |
+| `set_comment` | `bn_comment_get`, `bn_comment_set` |
+| `rename_symbol` | `bn_symbol_rename`; native variable renaming is also available |
+| `apply_type` | Native type definition, function prototype, and data-variable tools; import missing type libraries explicitly in the UI |
+
+These are workflow replacements, not argument-compatible aliases. Native function tools
+use function-start address expressions in the selected native view. Native comments
+replace existing text; read and combine it explicitly when appending. Native results for
+code, IL, CFG, and references are formatted text. Driver analysis still uses structured
+IL internally and does not parse native MCP's rendering.
+
+Native `binaryView` handles cannot be used as companion `binary_id` values. Call each
+server's listing tools and identify the intended file. Paths are descriptive metadata;
+debugger mapping uses PE identity and RVA. Do not compute `SizeOfImage` from view span.
+
+## Tools and profiles
+
+The companion exposes 16 tools in five startup-configured groups:
+
+| Group | Tools |
+|---|---|
+| `workspace` | `list_binaries`, `current_location`, `navigate`, `wait_for_analysis` |
+| `driver` | `driver_entry`, `sink_imports`, `device_security`, `ioctl_map`, `driver_surface` |
+| `evidence` | `add_evidence` |
+| `pair` | `pair_windbg`, `windbg_pair_status`, `unpair_windbg` |
+| `debug` | `set_breakpoint_here`, `run_to_here`, `compare_runtime_bytes` |
+
+All groups are enabled by default. `workspace` is always included; `debug` includes
+`pair`. The retired `analysis` and `edit` groups fail with migration guidance. Existing
+`groups: "all"` profiles need no changes; replace explicit `edit` with `evidence` and
+remove `analysis`. Restart to apply group changes. The retained `wait_for_analysis`
+waits on an explicit binary ID with cancellation and a deadline; native MCP provides
+general analysis control on its shared active view.
+
+Edit `profiles.json` locally while the companion is stopped:
 
 ```json
 {
-  "token": "<generated listener token>",
+  "token": "<generated companion token>",
   "groups": "all",
   "windbg": {
     "debugger": {
       "url": "http://127.0.0.1:8765/mcp",
-      "token": "<same WinDbg bearer credential used by the MCP host>"
+      "token": "<same WinDbg bearer credential used by the host>"
     }
   }
 }
 ```
 
-Use an SSH tunnel for remote HTTP, or HTTPS with certificate verification. URLs with
-embedded credentials, queries, or fragments are refused; redirects are disabled.
-Groups are `workspace`, `analysis`, `driver`, `edit`, `pair`, and `debug`, selected by a
-comma-separated string. All 24 tools are enabled by default; workspace is always included
-and debug includes pair. Restart to apply group changes.
+Remote HTTP requires a loopback tunnel. HTTPS verifies certificates. Profile URLs with
+credentials, queries, or fragments are refused, and redirects are disabled. The native
+Binary Ninja MCP connection is configured separately in the host.
 
-## Analysis and explicit edits
+## Driver analysis and evidence
 
-List binaries to obtain a process-lifetime ID. Calls select that ID rather than guessing
-between duplicate views. PE identity comes from raw PE headers even after a rebase.
-Addresses use padded lowercase 64-bit hex; RVAs use unpadded lowercase hex. Timestamp and
-SizeOfImage are matching metadata, not cryptographic identity. Hashes are unavailable
-when original bytes cannot be recovered reliably, including saved BNDB provenance that
-cannot be established.
+`list_binaries` returns open PE views with companion IDs, architecture, PE header
+identity, current base, analysis state, and available original-file SHA-256. Timestamp
+and `SizeOfImage` are matching metadata; they do not establish cryptographic identity.
+Unrecoverable original bytes are reported with an unavailable hash. Addresses use padded
+lowercase 64-bit hex; RVAs use unpadded lowercase hex.
 
-Code, CFG, xrefs, and symbol search are capped and report truncation. Driver recovery uses
-structured HLIL with available named layouts; it never automatically applies NT types.
-The sink inventory is version 1, defined in `binja_windbg_mcp/analysis.py`. Imports alone
-prove neither reachability nor absence of equivalent or dynamically resolved code.
+Driver recovery accepts named WDM MajorFunction registrations, control-code comparisons
+and resolved switches, including supported aliases. Unresolved KMDF registration and
+unsupported flow remain explicit. It never automatically applies NT types. Use native
+MCP or the UI to supply required types; relevant notifications invalidate cached captures.
+The version 1 sink inventory is in `binja_windbg_mcp/analysis.py`. Import presence alone
+does not establish reachability. IOCTL sizes stay null unless proven; conditional checks
+remain separate evidence. Static device-security arguments are defaults, not runtime
+access observations.
 
-Dispatch recovery supports named WDM MajorFunction array assignments. IOCTL recovery
-supports comparisons and resolved switches tied to the named control-code field, including
-single-assignment aliases. Unsupported indirect flow and unresolved KMDF registration are
-reported. Exact sizes remain null unless proven; minimum/conditional evidence is separate.
-Traversal is optional for IOCTL maps and enabled by the composite driver surface: depth 2,
-128 functions by default; hard limits 8 and 1,024. Static security arguments are defaults,
-not effective runtime access. Probe observations are not vulnerability verdicts.
+Traversal is optional for IOCTL maps and enabled by `driver_surface`: depth 2 and 128
+functions by default, hard limits 8 and 1,024. Composite results retain partial sections.
 
-Comments append by default. Evidence uses an undoable `[windbg-evidence]` comment record
-with explicit provenance. Function/data rename and named-type import/application are
-undoable; local variables are deferred. Never place credentials or kernel connection
-strings in comments or evidence notes.
+`add_evidence` is the companion's only analysis edit. It appends an undoable
+`[windbg-evidence]` comment with image coordinate, available file identity, debugger
+session/profile, runtime address, context, timestamp, and note. Identity, image name, and
+view generation are revalidated inside the edit. Tokens and kernel connection strings
+must never be included. Native MCP supplies ordinary comments and all symbol/type edits.
 
-## Pairing
+## Direct WinDbg pairing
 
-Call `pair_windbg(profile, session_id, binary_id)`. Explicitly unpair before replacing it.
-One outbound SDK task owns the connection and serializes polling with focused actions.
-Polling intervals are clamped to 200–5000 ms, at least one second while running; transient
-failures back off to ten seconds. Queue latency counts, so sub-second following is best effort. Authenticated polling can renew WinDbg leases/idle activity and keep sessions alive.
+`pair_windbg(profile, session_id, binary_id)` requires explicit unpairing before replacement.
+One outbound SDK task serializes polling with focused actions. Intervals are clamped to
+200–5000 ms, at least one second while running; transient failures back off to ten seconds.
+Queue latency counts. Authenticated polling can renew WinDbg leases and keep sessions alive.
 
-Only stops in the paired module navigate. Repeated identical samples preserve manual
-navigation. Rebase/reconnect requires validation. The three focused actions require the
-cursor in the paired view and use worker-side coordinate guards. Breakpoint and run-to
-mutations are never retried after ambiguous timeouts. Byte comparison reports raw
-current-view/runtime differences, incomplete reads, modification state, and relocation
-ranges; it does not infer why bytes differ.
+Only changed stops in the paired module navigate. Repeated samples preserve manual
+navigation; reconnect/rebase requires validation. Focused actions require the cursor in
+the paired view and use worker-side coordinate guards. Ambiguous breakpoint/run-to
+timeouts are reported without retry. Byte comparison reports current-view/runtime bytes,
+incomplete reads, modification state, and relocations, without guessing why bytes differ.
 
-Unpair closes local work and the MCP connection. It does not end the debugger session or
-remove breakpoints. Pairings are never persisted.
+Unpair closes the outbound connection and local work without ending the debugger session
+or removing breakpoints. Pairings are never persisted.
 
-## Verification and acceptance status
-
-Offline tests and an official-SDK HTTP interoperability test run without a Binary Ninja
-license or debugger:
+## Verification
 
 ```console
-python3.10 -m pytest tests
+python3.13 -m pytest tests
 ruff check .
 ruff format --check .
 ```
 
-The HTTP test requires permission to bind a temporary loopback socket. Update its checked-in
-tool golden only with `UPDATE_GOLDEN=1`. Runtime dependencies are hash-pinned; pytest and
-ruff are development-only tools.
+The official-SDK HTTP test binds a temporary loopback socket. Its tool golden is refreshed
+only with `UPDATE_GOLDEN=1`. Runtime dependencies are hash-pinned; pytest and ruff are test
+tools. [Validation results and remaining gates](docs/binja-windbg-mcp-validation.md) distinguish
+Python tests, the live native-server test drive, and companion UI/real-driver acceptance.
+The native test drive does not establish the companion's UI compatibility.
 
-Verified against installed Binary Ninja **5.3.9757 Personal** API definitions and Python 3.10;
-UI type signatures were inspected without running UI operations. Headless loading of the
-UI module is deliberately refused by Binary Ninja. Actual UI lifecycle, analysis-completion,
-undo/rebase behavior, and real HEVD/mountmgr analysis remain acceptance gates. Synthetic
-fixtures are not substitutes for captured Binary Ninja output or runtime access observations.
-
-Detailed automated results and open acceptance gates are in
-[the validation record](docs/binja-windbg-mcp-validation.md).
-
-The complete intended scope and remaining acceptance requirements are in
-[the implementation plan](docs/binja-windbg-mcp-plan.md). Structured WinDbg dispatch
-reachability is tracked separately as [windbg-mcp FOLLOWUPS.md](https://github.com/glslang/windbg-mcp/blob/main/FOLLOWUPS.md) item 60.
+The [implementation plan](docs/binja-windbg-mcp-plan.md) records the revised scope. Structured
+WinDbg dispatch reachability remains separate as windbg-mcp FOLLOWUPS.md item 60.
