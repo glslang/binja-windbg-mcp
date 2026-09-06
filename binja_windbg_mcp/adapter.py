@@ -46,6 +46,19 @@ def main_thread(fn, cancel=None):
     return value
 
 
+def current_frame():
+    """Use the sole window's selected tab when macOS has deactivated the app."""
+    from binaryninjaui import UIContext
+
+    context = UIContext.activeContext()
+    if context is None:
+        contexts = list(UIContext.allContexts())
+        if len(contexts) != 1:
+            return None
+        context = contexts[0]
+    return context.getCurrentViewFrame()
+
+
 class Workspace:
     def __init__(self):
         self._ids = {}
@@ -99,10 +112,9 @@ class Workspace:
     def _views(self):
         if self._closing.is_set():
             return []
-        from binaryninjaui import FileContext, UIContext
+        from binaryninjaui import FileContext
 
-        active = UIContext.activeContext()
-        frame = active.getCurrentViewFrame() if active else None
+        frame = current_frame()
         selected = frame.getCurrentBinaryView() if frame else None
         views = []
         seen = set()

@@ -124,6 +124,10 @@ Remote HTTP requires a loopback tunnel. HTTPS verifies certificates. Profile URL
 credentials, queries, or fragments are refused, and redirects are disabled. The native
 Binary Ninja MCP connection is configured separately in the host.
 
+The [live HEVD E2E test](docs/hevd-e2e.md) passed pairing, guarded actions, byte comparison
+and cursor following on the Windows ARM64 VM. Its real analysis capture remains partial
+for IOCTL recovery; the report and opt-in runner preserve that distinction.
+
 ## Driver analysis and evidence
 
 `list_binaries` returns open PE views with companion IDs, architecture, PE header

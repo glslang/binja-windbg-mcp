@@ -1,0 +1,153 @@
+{
+  "date": "2026-09-06",
+  "file_sha256": "8cd7546a42fe11308e512e54282c0d8b60f8c8774ec8823c5550ba5e53ac706e",
+  "checks": [
+    {
+      "server": "windbg",
+      "tool": "read_memory",
+      "elapsed_seconds": 0.002,
+      "result": {
+        "error": {
+          "category": "debugger",
+          "message": "coordinate PE identity mismatch",
+          "session_id": "sess-18d2c17b63bccaec-2"
+        },
+        "status": "error"
+      }
+    },
+    {
+      "server": "windbg",
+      "tool": "set_breakpoint",
+      "elapsed_seconds": 0.002,
+      "result": {
+        "error": {
+          "category": "debugger",
+          "message": "coordinate PE identity mismatch",
+          "session_id": "sess-18d2c17b63bccaec-2"
+        },
+        "status": "error"
+      }
+    },
+    {
+      "server": "windbg",
+      "tool": "run_to_address",
+      "elapsed_seconds": 0.002,
+      "result": {
+        "error": {
+          "category": "debugger",
+          "message": "coordinate PE identity mismatch",
+          "session_id": "sess-18d2c17b63bccaec-2"
+        },
+        "status": "error"
+      }
+    },
+    {
+      "server": "bn",
+      "tool": "compare_runtime_bytes",
+      "elapsed_seconds": 0.009,
+      "result": {
+        "status": "ok",
+        "coordinate": {
+          "module": "HEVD",
+          "image_name": "HEVD.sys",
+          "identity": {
+            "timestamp": 1734099220,
+            "size": 585728,
+            "pdb": {
+              "guid": "A75E3B9A77BD44C4A5C5E8F7F563A002",
+              "age": 1
+            }
+          },
+          "rva": "0x87078"
+        },
+        "modified": false,
+        "source": "current BinaryView",
+        "requested_size": 32,
+        "static_data": "fd7bbfa9fd030091e8fbffb0080940f9e00301aa010080521f1c00f91f3000b9",
+        "runtime_data": "fd7bbfa9fd030091e8fbffb0080940f9e00301aa010080521f1c00f91f3000b9",
+        "static_read_size": 32,
+        "runtime_read_size": 32,
+        "incomplete": false,
+        "equal": true,
+        "differing_offsets": [],
+        "relocation_ranges": []
+      }
+    },
+    {
+      "server": "bn",
+      "tool": "set_breakpoint_here",
+      "elapsed_seconds": 0.009,
+      "result": {
+        "breakpoint": {
+          "address": "0xfffff80084467078",
+          "deferred": false,
+          "enabled": true,
+          "id": 0,
+          "kind": "code",
+          "one_shot": false,
+          "pass_count": 1,
+          "passes_remaining": 1
+        },
+        "breakpoints": [
+          {
+            "address": "0xfffff80084467078",
+            "deferred": false,
+            "enabled": true,
+            "id": 0,
+            "kind": "code",
+            "one_shot": false,
+            "pass_count": 1,
+            "passes_remaining": 1
+          }
+        ],
+        "cut_short": false,
+        "status": "ok"
+      }
+    },
+    {
+      "server": "bn",
+      "tool": "run_to_here",
+      "elapsed_seconds": 0.019,
+      "result": {
+        "output": "g\nBreakpoint 0 hit\n",
+        "status": "ok",
+        "stopped_at": "0xfffff80084467098",
+        "target": "0xfffff80084467098",
+        "timeout_ms": 60000,
+        "verdict": "hit"
+      }
+    },
+    {
+      "server": "bn",
+      "tool": "unpair_windbg",
+      "elapsed_seconds": 0.002,
+      "result": {
+        "paired": false
+      }
+    },
+    {
+      "server": "bn",
+      "tool": "unpair_windbg",
+      "elapsed_seconds": 0.003,
+      "result": {
+        "paired": false
+      }
+    },
+    {
+      "server": "windbg",
+      "tool": "end_session",
+      "elapsed_seconds": 0.022,
+      "result": {
+        "released": true,
+        "session_id": "sess-18d2c17b63bccaec-2",
+        "status": "ok",
+        "worker_terminated": true
+      }
+    }
+  ],
+  "trigger": {
+    "Operation": "open-close",
+    "Win32Error": 0,
+    "IoctlsSent": 0
+  }
+}

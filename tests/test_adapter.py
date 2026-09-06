@@ -347,3 +347,26 @@ def test_workspace_shutdown_cancels_analysis_completion_subscription(monkeypatch
     asyncio.run(run())
     assert cancelled == [True]
     assert workspace._waiters[(1, "PE")] == []
+
+
+def test_selected_frame_survives_app_deactivation_without_guessing_between_windows(monkeypatch):
+    import sys
+
+    from binja_windbg_mcp.adapter import current_frame
+
+    first, second = object(), object()
+    contexts = [N(getCurrentViewFrame=lambda: first)]
+    active = [None]
+    monkeypatch.setitem(
+        sys.modules,
+        "binaryninjaui",
+        N(UIContext=N(activeContext=lambda: active[0], allContexts=lambda: contexts)),
+    )
+    assert current_frame() is first
+    contexts.append(N(getCurrentViewFrame=lambda: second))
+    assert current_frame() is None
+    active[0] = contexts[1]
+    assert current_frame() is second
+    active[0] = None
+    contexts.clear()
+    assert current_frame() is None
