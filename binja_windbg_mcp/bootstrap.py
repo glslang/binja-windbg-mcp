@@ -114,13 +114,13 @@ class Plugin:
             ),
         )
         for name, description, callback in commands:
-            bn.PluginCommand.register("WinDbg MCP\\" + name, description, callback)
+            bn.PluginCommand.register_global("WinDbg MCP\\" + name, description, callback)
 
     @property
     def state(self):
         return self.listener.state if self.listener else self.setup_state
 
-    def start(self, _view=None):
+    def start(self):
         self.want_start = True
         if self.listener:
             try:
@@ -190,7 +190,7 @@ class Plugin:
             return
         self.start()
 
-    def stop(self, _view=None):
+    def stop(self):
         self.want_start = False
         if self.listener:
             self.listener.stop()
@@ -199,10 +199,10 @@ class Plugin:
         elif not self.restart_required:
             self.setup_state = "stopped"
 
-    def status(self, _view=None):
+    def status(self):
         self.bn.show_message_box("WinDbg MCP", self.state)
 
-    def connection(self, _view=None):
+    def connection(self):
         path = Path(self.bn.user_directory()) / "binja-windbg-mcp" / "profiles.json"
         self.bn.show_message_box(
             "WinDbg MCP",

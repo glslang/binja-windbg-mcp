@@ -81,7 +81,7 @@ class FakeBN:
     def __init__(self):
         self.commands, self.tasks, self.pending, self.logs = {}, [], [], []
         self.PluginCommand = N(
-            register=lambda name, _, callback: self.commands.update({name: callback})
+            register_global=lambda name, _, callback: self.commands.update({name: callback})
         )
         owner = self
 
@@ -199,3 +199,26 @@ def test_start_cannot_bypass_restart_after_updating_loaded_packages(monkeypatch)
     assert len(bn.tasks) == 1
     assert plugin.listener is None
     assert "Restart Binary Ninja" in plugin.state
+
+
+def test_global_controls_execute_without_a_binary_view(tmp_path):
+    bn = FakeBN()
+    messages = []
+    bn.user_directory = lambda: str(tmp_path)
+    bn.show_message_box = lambda title, message: messages.append((title, message))
+    plugin = bootstrap.Plugin(bn)
+    assert set(bn.commands) == {
+        "WinDbg MCP\\Start",
+        "WinDbg MCP\\Stop",
+        "WinDbg MCP\\Status",
+        "WinDbg MCP\\Connection Information",
+    }
+    bn.commands["WinDbg MCP\\Start"]()
+    assert len(bn.tasks) == 1
+    bn.commands["WinDbg MCP\\Stop"]()
+    assert not plugin.want_start
+    bn.commands["WinDbg MCP\\Status"]()
+    assert messages[-1] == ("WinDbg MCP", plugin.state)
+    bn.commands["WinDbg MCP\\Connection Information"]()
+    assert "http://127.0.0.1:8766/mcp" in messages[-1][1]
+    assert "profiles.json" in messages[-1][1]
