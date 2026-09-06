@@ -62,14 +62,15 @@ class Pairing:
                 await task
             except asyncio.CancelledError:
                 pass
+        self._fail_queued_actions()
+        self.state = {"paired": False}
+        return dict(self.state)
+
+    def _fail_queued_actions(self):
         while not self.queue.empty():
             _, _, future = self.queue.get_nowait()
             if not future.done():
-                future.set_exception(
-                    ValueError("pairing closed; an in-flight mutation may have completed")
-                )
-        self.state = {"paired": False}
-        return dict(self.state)
+                future.set_exception(ValueError("pairing stopped before action was sent"))
 
     async def _call(self, client, tool, args):
         result = await client.call_tool(tool, args)
@@ -234,7 +235,9 @@ class Pairing:
                                             )
                                         )
                                 finally:
-                                    current_future = None
+                                    # Cancellation leaves the active request for shutdown to resolve.
+                                    if current_future.done():
+                                        current_future = None
                 except asyncio.CancelledError:
                     raise
                 except Exception as error:
@@ -242,13 +245,15 @@ class Pairing:
                     if not ready.done():
                         ready.set_exception(ValueError("pairing validation or connection failed"))
                         return
-                    if isinstance(error, httpx2.HTTPStatusError) and error.response.status_code in (
-                        401,
-                        403,
+                    errors = tuple(leaf_errors(error))
+                    if any(
+                        isinstance(leaf, httpx2.HTTPStatusError)
+                        and leaf.response.status_code in (401, 403)
+                        for leaf in errors
                     ):
                         self.state["state"] = "authentication_failed"
                         return
-                    if any(isinstance(leaf, ValueError) for leaf in leaf_errors(error)):
+                    if any(isinstance(leaf, ValueError) for leaf in errors):
                         self.state["state"] = "validation_failed"
                         return
                     self.state["state"] = "reconnecting"
@@ -259,6 +264,7 @@ class Pairing:
                 current_future.set_result(
                     {"status": "uncertain", "reason": "pairing closed during action"}
                 )
+            self._fail_queued_actions()
             if not ready.done():
                 ready.cancel()
 

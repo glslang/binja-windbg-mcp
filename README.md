@@ -173,7 +173,9 @@ timeouts are reported without retry. Byte comparison reports current-view/runtim
 incomplete reads, modification state, and relocations, without guessing why bytes differ.
 
 Unpair closes the outbound connection and local work without ending the debugger session
-or removing breakpoints. Pairings are never persisted.
+or removing breakpoints. Pairings are never persisted. Authentication failures stop polling,
+including errors wrapped by the SDK. When pairing stops, queued actions fail as unsent;
+actions interrupted in flight report an uncertain outcome without retry.
 
 ## Verification
 
