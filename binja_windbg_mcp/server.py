@@ -6,7 +6,9 @@ import asyncio
 import hmac
 import socket
 import threading
+import time
 from datetime import datetime, timezone
+from typing import Literal
 
 import uvicorn
 from mcp.server import MCPServer
@@ -15,6 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from .core import Budget, Coordinate
 from .pairing import Pairing
+from .similarity import SimilarityError, SimilarityManager
 
 GROUPS = {
     "workspace": ("list_binaries", "current_location", "navigate", "wait_for_analysis"),
@@ -22,6 +25,14 @@ GROUPS = {
     "evidence": ("add_evidence",),
     "pair": ("pair_windbg", "windbg_pair_status", "unpair_windbg"),
     "debug": ("set_breakpoint_here", "run_to_here", "compare_runtime_bytes"),
+    "similarity": (
+        "similarity_start",
+        "similarity_status",
+        "similarity_results",
+        "similarity_diff",
+        "similarity_cancel",
+        "similarity_close",
+    ),
 }
 
 
@@ -59,9 +70,16 @@ def make_server(workspace, profiles):
             "here. Native active-view selection is shared across clients. This server uses "
             "the Binary Ninja API directly with explicit binary IDs, never the native active "
             "view. File paths describe files; debugger mapping requires PE identity and RVA."
+            " Optional similarity tools require BN6 Ultimate and compare two open PE views. "
+            "Matches retain each build's identity; scores are provider-specific integers 0–255. "
+            "Disassembly differences are textual, not proof of semantic equivalence. Pass a "
+            "result's generation to navigate as expected_generation before investigating it."
         ),
     )
     pairing = Pairing(workspace, profiles)
+    if not hasattr(workspace, "similarity"):
+        workspace.similarity = SimilarityManager(workspace)
+    similarity = workspace.similarity
     selected = selected_tools(profiles.groups)
 
     def tool(group):
@@ -73,9 +91,18 @@ def make_server(workspace, profiles):
                     structured_output=True,
                     annotations=ToolAnnotations(
                         read_only_hint=group not in ("evidence", "debug")
-                        and fn.__name__ not in ("navigate", "pair_windbg", "unpair_windbg"),
+                        and fn.__name__
+                        not in (
+                            "navigate",
+                            "pair_windbg",
+                            "unpair_windbg",
+                            "similarity_start",
+                            "similarity_cancel",
+                            "similarity_close",
+                        ),
                         destructive_hint=fn.__name__ == "run_to_here",
-                        idempotent_hint=group not in ("evidence", "debug"),
+                        idempotent_hint=group not in ("evidence", "debug")
+                        and fn.__name__ != "similarity_start",
                         open_world_hint=False,
                     ),
                 )
@@ -103,9 +130,15 @@ def make_server(workspace, profiles):
         return await asyncio.to_thread(workspace.current_location, binary_id)
 
     @tool("workspace")
-    async def navigate(binary_id: str, coordinate: Coordinate) -> dict[str, object]:
+    async def navigate(
+        binary_id: str,
+        coordinate: Coordinate,
+        expected_generation: tuple[str, int, int] | None = None,
+    ) -> dict[str, object]:
         """Navigate one selected binary after validating PE identity and RVA."""
-        return await asyncio.to_thread(workspace.navigate, binary_id, coordinate)
+        return await asyncio.to_thread(
+            workspace.navigate, binary_id, coordinate, expected_generation=expected_generation
+        )
 
     @tool("workspace")
     async def wait_for_analysis(binary_id: str, timeout_ms: int = 30000) -> dict[str, object]:
@@ -203,6 +236,73 @@ def make_server(workspace, profiles):
         """Compare 1–256 current BinaryView bytes with runtime bytes and report raw differences."""
         return await pairing.action("compare_runtime_bytes", size)
 
+    async def comparison_call(method, *args):
+        try:
+            return await asyncio.to_thread(method, *args)
+        except SimilarityError as error:
+            return {
+                "status": "unavailable" if error.code == "similarity_unavailable" else "error",
+                "error": {"code": error.code, "message": str(error)},
+            }
+
+    @tool("similarity")
+    async def similarity_start(
+        reference_binary_id: str,
+        target_binary_id: str,
+        providers: list[Literal["Google BinDiff", "WARP"]] | None = None,
+        timeout_ms: int = 120000,
+    ) -> dict[str, object]:
+        """Start a read-only comparison of two analyzed, same-architecture PE views (Ultimate)."""
+        return await comparison_call(
+            similarity.start, reference_binary_id, target_binary_id, providers, timeout_ms
+        )
+
+    @tool("similarity")
+    async def similarity_status(comparison_id: str | None = None) -> dict[str, object]:
+        """Get progress, or list capabilities and retained comparisons when no ID is supplied."""
+        return await comparison_call(similarity.status, comparison_id)
+
+    @tool("similarity")
+    async def similarity_results(
+        comparison_id: str,
+        side: Literal["reference", "target"] = "target",
+        kind: Literal["matches", "unmatched"] = "matches",
+        provider: Literal["Google BinDiff", "WARP"] | None = None,
+        min_similarity: int = 0,
+        min_confidence: int = 0,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> dict[str, object]:
+        """Page terminal matches (scores 0–255) or unmatched functions; incomplete coverage is explicit."""
+        return await comparison_call(
+            similarity.results,
+            comparison_id,
+            side,
+            kind,
+            provider,
+            min_similarity,
+            min_confidence,
+            offset,
+            limit,
+        )
+
+    @tool("similarity")
+    async def similarity_diff(
+        comparison_id: str, result_id: str, offset: int = 0, limit: int = 100
+    ) -> dict[str, object]:
+        """Page paired instruction-text differences, at most 2000 instructions per function."""
+        return await comparison_call(similarity.diff, comparison_id, result_id, offset, limit)
+
+    @tool("similarity")
+    async def similarity_cancel(comparison_id: str) -> dict[str, object]:
+        """Request cooperative cancellation, retaining partial results after providers stop."""
+        return await comparison_call(similarity.cancel, comparison_id)
+
+    @tool("similarity")
+    async def similarity_close(comparison_id: str) -> dict[str, object]:
+        """Release a comparison; an active run stays owned until its cancellation finishes."""
+        return await comparison_call(similarity.close, comparison_id)
+
     return server, pairing
 
 
@@ -264,6 +364,8 @@ class Listener:
                 return
             try:
                 selected_tools(self.profiles.groups)
+                if hasattr(self.workspace, "similarity"):
+                    self.workspace.similarity.resume()
             except ValueError as error:
                 self.state = f"startup failed: {error}"
                 raise
@@ -313,6 +415,7 @@ class Listener:
             try:
                 await self.http.serve(sockets=[sock])
             finally:
+                self.workspace.similarity.stop_all()
                 if self._unpair_task is not None:
                     await self._unpair_task
                 else:
@@ -330,6 +433,8 @@ class Listener:
 
     def _request_stop(self):
         # Runs on the network loop. Close polling immediately, before draining requests.
+        if hasattr(self.workspace, "similarity"):
+            self.workspace.similarity.stop_all()
         if self.http is not None:
             self.http.should_exit = True
         if self._pairing is not None and self._unpair_task is None:
@@ -337,6 +442,8 @@ class Listener:
 
     def stop(self):
         self._stop_requested.set()
+        if hasattr(self.workspace, "similarity"):
+            self.workspace.similarity.stop_all()
         if self.thread and self.thread.is_alive():
             self.state = "stopping"
         loop = self._loop
@@ -347,8 +454,13 @@ class Listener:
                 pass  # The network loop has already closed.
 
     def shutdown(self):
+        deadline = time.monotonic() + 3
         self.workspace.shutdown()
+        if hasattr(self.workspace, "similarity"):
+            self.workspace.similarity.stop_all(shutdown=True)
         self.stop()
         # Workspace shutdown releases workers waiting for the UI before this bounded join.
         if self.thread and self.thread is not threading.current_thread():
-            self.thread.join(timeout=3)
+            self.thread.join(timeout=max(0, deadline - time.monotonic()))
+        if hasattr(self.workspace, "similarity"):
+            self.workspace.similarity.join(max(0, deadline - time.monotonic()))

@@ -148,7 +148,7 @@ def test_profiles_symlink_refused(tmp_path):
 
 def test_groups_exactly_once():
     names = [name for group in GROUPS.values() for name in group]
-    assert len(names) == len(set(names)) == 16
+    assert len(names) == len(set(names)) == 22
     assert selected_tools("debug") == set(GROUPS["workspace"] + GROUPS["pair"] + GROUPS["debug"])
     with pytest.raises(ValueError):
         selected_tools("typo")

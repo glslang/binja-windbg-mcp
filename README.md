@@ -5,6 +5,11 @@ macOS and its Python 3.13 interpreter. Native MCP handles general inspection and
 This plugin adds PE identity/RVA coordinates, structured driver evidence, and optional
 WinDbg following and focused actions. It uses the **official MCP Python SDK 2.1.1**.
 
+The optional [binary similarity tools](docs/similarity.md) compare two open PE builds
+using BN6 Ultimate's BinDiff and WARP providers and return agent-readable disassembly
+differences. Existing Personal workflows remain supported. Ultimate execution and
+live similarity-to-debugger acceptance are still pending.
+
 Driver analysis works without WinDbg. The companion reads Binary Ninja's structured IL
 through its Python API; native MCP currently renders IL as text. It selects views by its
 own binary IDs because native MCP's active view is shared across clients. The companion
@@ -88,7 +93,7 @@ debugger mapping uses PE identity and RVA. Do not compute `SizeOfImage` from vie
 
 ## Tools and profiles
 
-The companion exposes 16 tools in five startup-configured groups:
+The companion exposes 22 tools in six startup-configured groups:
 
 | Group | Tools |
 |---|---|
@@ -97,6 +102,7 @@ The companion exposes 16 tools in five startup-configured groups:
 | `evidence` | `add_evidence` |
 | `pair` | `pair_windbg`, `windbg_pair_status`, `unpair_windbg` |
 | `debug` | `set_breakpoint_here`, `run_to_here`, `compare_runtime_bytes` |
+| `similarity` | `similarity_start`, `similarity_status`, `similarity_results`, `similarity_diff`, `similarity_cancel`, `similarity_close` |
 
 All groups are enabled by default. `workspace` is always included; `debug` includes
 `pair`. The retired `analysis` and `edit` groups fail with migration guidance. Existing
