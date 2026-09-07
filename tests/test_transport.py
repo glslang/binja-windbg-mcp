@@ -51,7 +51,7 @@ def test_sdk_interoperability_auth_and_restart(tmp_path):
             async with Client(streamable_http_client(url, http_client=http)) as client:
                 listed = await client.list_tools()
                 names = sorted(tool.name for tool in listed.tools)
-                assert len(names) == 16
+                assert len(names) == 22
                 result = await client.call_tool("list_binaries", {})
                 assert result.structured_content == {"binaries": []}
                 surface = [

@@ -1,5 +1,35 @@
 # Binary Ninja bridge validation
 
+## Similarity implementation (2026-09-07)
+
+The companion adds six optional similarity tools, bringing the full surface to 22.
+The [similarity workflow](similarity.md) documents input requirements, provider
+scores, cooperative cancellation, retained results, generation guards, and limits.
+Implementation uses BN6's Python similarity API with no resolvers or apply calls.
+
+Automated coverage exercises the job lifecycle, partial and unresolved results,
+provider reference direction, separate build identities, disassembly alignment and
+limits, stale-generation navigation, SDK tool calls and annotations, and capture
+cleanup. The HTTP tool golden includes the six tools and optional navigation
+generation. These tests use native-boundary doubles; they do not establish provider
+accuracy or native Ultimate lifecycle behavior.
+
+The full Python suite passed **125 tests, no skips**, including loopback HTTP,
+the updated tool golden, and 31 similarity cases. Ruff lint/format checks and
+documentation lint passed. Verification used Python 3.13 and the existing pinned
+MCP SDK; no dependency versions changed.
+
+A separate process inspected the installed BN6 Python API with user plugins disabled.
+It reported version `6.0.10601 Personal` and cleanly returned unavailable similarity
+capabilities. Personal's headless API restriction prevents a native comparison in
+that process. No user binary or database was opened or edited by this probe.
+
+`tools/similarity_capture.py` is the opt-in authenticated MCP capture runner. Native
+Ultimate runs and captures, application quit with a native comparison active, and
+the live similarity-to-debugger workflow are pending release gates. Existing
+HEVD/mountmgr results below remain evidence for the prior companion functionality;
+they are not similarity acceptance results. No Rust source changed.
+
 ## Companion 0.2 refactor (2026-09-06)
 
 The companion targets Binary Ninja 6.0.10601 Personal and Python 3.13. Its reduced surface

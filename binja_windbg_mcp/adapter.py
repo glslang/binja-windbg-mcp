@@ -69,9 +69,13 @@ class Workspace:
         self._lock = threading.RLock()
         self._closing = threading.Event()
         self._budgets = {}
+        from .similarity import SimilarityManager
+
+        self.similarity = SimilarityManager(self)
 
     def shutdown(self):
         self._closing.set()
+        self.similarity.stop_all(shutdown=True)
         with self._lock:
             for budget in self._budgets.values():
                 budget.cancel.set()
@@ -108,6 +112,7 @@ class Workspace:
         with self._lock:
             self._revision[key] = self._revision.get(key, 0) + 1
             self._cache.clear()
+        self.similarity.invalidate(key)
 
     def _views(self):
         if self._closing.is_set():

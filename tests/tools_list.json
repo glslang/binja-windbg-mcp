@@ -464,6 +464,31 @@
         },
         "coordinate": {
           "$ref": "#/$defs/Coordinate"
+        },
+        "expected_generation": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "integer"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Generation"
         }
       },
       "required": [
@@ -564,6 +589,277 @@
       "read_only_hint": false,
       "destructive_hint": false,
       "idempotent_hint": false,
+      "open_world_hint": false
+    }
+  },
+  {
+    "name": "similarity_cancel",
+    "description": "Request cooperative cancellation, retaining partial results after providers stop.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "comparison_id": {
+          "title": "Comparison Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "comparison_id"
+      ],
+      "title": "similarity_cancelArguments"
+    },
+    "output_schema": {
+      "additionalProperties": true,
+      "title": "similarity_cancelDictOutput",
+      "type": "object"
+    },
+    "annotations": {
+      "read_only_hint": false,
+      "destructive_hint": false,
+      "idempotent_hint": true,
+      "open_world_hint": false
+    }
+  },
+  {
+    "name": "similarity_close",
+    "description": "Release a comparison; an active run stays owned until its cancellation finishes.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "comparison_id": {
+          "title": "Comparison Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "comparison_id"
+      ],
+      "title": "similarity_closeArguments"
+    },
+    "output_schema": {
+      "additionalProperties": true,
+      "title": "similarity_closeDictOutput",
+      "type": "object"
+    },
+    "annotations": {
+      "read_only_hint": false,
+      "destructive_hint": false,
+      "idempotent_hint": true,
+      "open_world_hint": false
+    }
+  },
+  {
+    "name": "similarity_diff",
+    "description": "Page paired instruction-text differences, at most 2000 instructions per function.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "comparison_id": {
+          "title": "Comparison Id",
+          "type": "string"
+        },
+        "result_id": {
+          "title": "Result Id",
+          "type": "string"
+        },
+        "offset": {
+          "default": 0,
+          "title": "Offset",
+          "type": "integer"
+        },
+        "limit": {
+          "default": 100,
+          "title": "Limit",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "comparison_id",
+        "result_id"
+      ],
+      "title": "similarity_diffArguments"
+    },
+    "output_schema": {
+      "additionalProperties": true,
+      "title": "similarity_diffDictOutput",
+      "type": "object"
+    },
+    "annotations": {
+      "read_only_hint": true,
+      "destructive_hint": false,
+      "idempotent_hint": true,
+      "open_world_hint": false
+    }
+  },
+  {
+    "name": "similarity_results",
+    "description": "Page terminal matches (scores 0\u2013255) or unmatched functions; incomplete coverage is explicit.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "comparison_id": {
+          "title": "Comparison Id",
+          "type": "string"
+        },
+        "side": {
+          "default": "target",
+          "enum": [
+            "reference",
+            "target"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "kind": {
+          "default": "matches",
+          "enum": [
+            "matches",
+            "unmatched"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "enum": [
+                "Google BinDiff",
+                "WARP"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider"
+        },
+        "min_similarity": {
+          "default": 0,
+          "title": "Min Similarity",
+          "type": "integer"
+        },
+        "min_confidence": {
+          "default": 0,
+          "title": "Min Confidence",
+          "type": "integer"
+        },
+        "offset": {
+          "default": 0,
+          "title": "Offset",
+          "type": "integer"
+        },
+        "limit": {
+          "default": 100,
+          "title": "Limit",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "comparison_id"
+      ],
+      "title": "similarity_resultsArguments"
+    },
+    "output_schema": {
+      "additionalProperties": true,
+      "title": "similarity_resultsDictOutput",
+      "type": "object"
+    },
+    "annotations": {
+      "read_only_hint": true,
+      "destructive_hint": false,
+      "idempotent_hint": true,
+      "open_world_hint": false
+    }
+  },
+  {
+    "name": "similarity_start",
+    "description": "Start a read-only comparison of two analyzed, same-architecture PE views (Ultimate).",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "reference_binary_id": {
+          "title": "Reference Binary Id",
+          "type": "string"
+        },
+        "target_binary_id": {
+          "title": "Target Binary Id",
+          "type": "string"
+        },
+        "providers": {
+          "anyOf": [
+            {
+              "items": {
+                "enum": [
+                  "Google BinDiff",
+                  "WARP"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Providers"
+        },
+        "timeout_ms": {
+          "default": 120000,
+          "title": "Timeout Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "reference_binary_id",
+        "target_binary_id"
+      ],
+      "title": "similarity_startArguments"
+    },
+    "output_schema": {
+      "additionalProperties": true,
+      "title": "similarity_startDictOutput",
+      "type": "object"
+    },
+    "annotations": {
+      "read_only_hint": false,
+      "destructive_hint": false,
+      "idempotent_hint": false,
+      "open_world_hint": false
+    }
+  },
+  {
+    "name": "similarity_status",
+    "description": "Get progress, or list capabilities and retained comparisons when no ID is supplied.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "comparison_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Comparison Id"
+        }
+      },
+      "title": "similarity_statusArguments"
+    },
+    "output_schema": {
+      "additionalProperties": true,
+      "title": "similarity_statusDictOutput",
+      "type": "object"
+    },
+    "annotations": {
+      "read_only_hint": true,
+      "destructive_hint": false,
+      "idempotent_hint": true,
       "open_world_hint": false
     }
   },
