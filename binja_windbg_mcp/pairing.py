@@ -143,6 +143,7 @@ class Pairing:
 
     async def _run(self, url, token, epoch, ready, interval):
         delay, last = interval, None
+        retry_delay = 0
         current_future = None
         try:
             while epoch == self.epoch:
@@ -182,9 +183,12 @@ class Pairing:
                                         if category in ("stale_session", "worker_lost"):
                                             return
                                         if category == "target_running":
+                                            retry_delay = 0
                                             delay = max(interval, 1)
                                             continue
                                         raise ConnectionError("location unavailable")
+                                    # Reconnect validation alone does not establish poll recovery.
+                                    retry_delay = 0
                                     delay = interval
                                     snapshot = await asyncio.to_thread(
                                         self.workspace.current_location, self.state["binary_id"]
@@ -264,8 +268,8 @@ class Pairing:
                         self.state["state"] = "validation_failed"
                         return
                     self.state["state"] = "reconnecting"
-                    delay = min(max(1, delay * 2), 10)
-                    await asyncio.sleep(delay)
+                    retry_delay = min(max(1, retry_delay * 2), 10)
+                    await asyncio.sleep(retry_delay)
         finally:
             if current_future is not None and not current_future.done():
                 current_future.set_result(

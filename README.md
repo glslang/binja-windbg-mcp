@@ -163,7 +163,9 @@ must never be included. Native MCP supplies ordinary comments and all symbol/typ
 
 `pair_windbg(profile, session_id, binary_id)` requires explicit unpairing before replacement.
 One outbound SDK task serializes polling with focused actions. Intervals are clamped to
-200–5000 ms, at least one second while running; transient failures back off to ten seconds.
+200–5000 ms, at least one second while running. Transient failures retry after 1, 2, 4, 8,
+then 10 seconds, independently of the polling interval. Successful reconnect validation
+preserves this backoff; a successful location response or `target_running` resets it.
 Queue latency counts. Authenticated polling can renew WinDbg leases and keep sessions alive.
 
 Only changed stops in the paired module navigate. Repeated samples preserve manual
