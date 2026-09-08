@@ -1178,7 +1178,7 @@
               }
             },
             {
-              "kind": "replace",
+              "kind": "insert",
               "reference": null,
               "target": {
                 "address": "0x0000000140001022",
@@ -1188,7 +1188,7 @@
               }
             },
             {
-              "kind": "replace",
+              "kind": "insert",
               "reference": null,
               "target": {
                 "address": "0x0000000140001024",

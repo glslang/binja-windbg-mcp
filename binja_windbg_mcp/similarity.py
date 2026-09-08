@@ -8,6 +8,7 @@ import json
 import threading
 import time
 import uuid
+from collections import OrderedDict
 from dataclasses import dataclass, field
 from itertools import zip_longest
 
@@ -55,8 +56,50 @@ def align_instructions(reference, target):
     rows = []
     for kind, a, b, c, d in matcher.get_opcodes():
         for left, right in zip_longest(reference[a:b], target[c:d]):
-            rows.append({"kind": kind, "reference": left, "target": right})
+            row_kind = "insert" if left is None else "delete" if right is None else kind
+            rows.append({"kind": row_kind, "reference": left, "target": right})
     return rows
+
+
+class MatchIndex:
+    """Lazily index frozen results without holding the manager's lifecycle lock."""
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._ordered = {}
+        self._filtered = OrderedDict()
+
+    def select(self, records, side, provider, min_similarity, min_confidence):
+        with self._lock:
+            if side not in self._ordered:
+                self._ordered[side] = tuple(
+                    sorted(
+                        records,
+                        key=lambda r: (
+                            int(r[side]["coordinate"]["rva"], 16),
+                            -r["similarity"],
+                            -r["confidence"],
+                            r["result_id"],
+                        ),
+                    )
+                )
+            ordered = self._ordered[side]
+            if provider is None and min_similarity == min_confidence == 0:
+                return ordered
+            key = (side, provider, min_similarity, min_confidence)
+            if key not in self._filtered:
+                self._filtered[key] = tuple(
+                    r
+                    for r in ordered
+                    if (provider is None or r["provider"] == provider)
+                    and r["similarity"] >= min_similarity
+                    and r["confidence"] >= min_confidence
+                )
+                # Retain row references only, with a bounded cache for arbitrary score queries.
+                if len(self._filtered) > 8:
+                    self._filtered.popitem(last=False)
+            self._filtered.move_to_end(key)
+            return self._filtered[key]
 
 
 @dataclass
@@ -79,6 +122,7 @@ class Comparison:
     snapshots: dict = field(default_factory=dict)
     keys: tuple = ()
     records: list = field(default_factory=list)
+    match_index: MatchIndex = field(default_factory=MatchIndex)
     unmatched: dict = field(default_factory=lambda: {side: [] for side in SIDES})
     incomplete: bool = True
     unresolved: int = 0
@@ -395,26 +439,17 @@ class SimilarityManager:
             require(
                 job.done.is_set(), "not_ready", "wait for comparison completion or cancellation"
             )
-            if kind == "matches":
-                records = [
-                    r
-                    for r in job.records
-                    if (provider is None or r["provider"] == provider)
-                    and r["similarity"] >= min_similarity
-                    and r["confidence"] >= min_confidence
-                ]
-                records = sorted(
-                    records,
-                    key=lambda r: (
-                        int(r[side]["coordinate"]["rva"], 16),
-                        -r["similarity"],
-                        -r["confidence"],
-                        r["result_id"],
-                    ),
-                )
-            else:
-                records = job.unmatched[side]
-            return {**self._status(job), "side": side, "kind": kind, **page(records, offset, limit)}
+        if kind == "matches":
+            records = job.match_index.select(
+                job.records, side, provider, min_similarity, min_confidence
+            )
+        else:
+            records = job.unmatched[side]
+        result = page(records, offset, limit)
+        with self._lock:
+            # A close/shutdown may have completed while indexing or copying this page.
+            self._get(comparison_id)
+            return {**self._status(job), "side": side, "kind": kind, **result}
 
     def diff(self, comparison_id, result_id, offset=0, limit=100):
         with self._lock:

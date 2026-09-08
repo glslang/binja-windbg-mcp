@@ -1,12 +1,14 @@
 import asyncio
 import copy
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace as N
 
 import pytest
 
 from binja_windbg_mcp.similarity import (
     PROVIDERS,
+    MatchIndex,
     SimilarityError,
     SimilarityManager,
     align_instructions,
@@ -269,9 +271,152 @@ def test_disassembly_alignment_ignores_address_and_preserves_insert_delete_repla
     right[0]["address"] = "0xffff"
     result = align_instructions(left, right)
     assert result[0]["kind"] == "equal"
-    assert result[1]["kind"] == result[2]["kind"] == "replace"
+    assert result[1]["kind"] == "replace"
+    assert result[2]["kind"] == "delete"
     assert result[-1]["kind"] == "insert"
     assert align_instructions(rows("ret"), [])[0]["kind"] == "delete"
+
+
+@pytest.mark.parametrize(
+    "left_count,right_count,kinds",
+    [
+        (1, 3, ["replace", "insert", "insert"]),
+        (3, 1, ["replace", "delete", "delete"]),
+        (2, 2, ["replace", "replace"]),
+    ],
+)
+def test_unequal_replacements_preserve_every_instruction_across_pages(
+    left_count, right_count, kinds
+):
+    left = [{"text": f"left {i}", "address": hex(i)} for i in range(left_count)]
+    right = [{"text": f"right {i}", "address": hex(i + 100)} for i in range(right_count)]
+    rows = align_instructions(left, right)
+    paged = [page(rows, i, 1)["items"][0] for i in range(len(rows))]
+    assert [r["kind"] for r in paged] == kinds
+    assert [r["reference"] for r in paged if r["reference"] is not None] == left
+    assert [r["target"] for r in paged if r["target"] is not None] == right
+
+
+def test_match_index_reuses_order_and_filters_for_large_result_sets(monkeypatch):
+    import binja_windbg_mcp.similarity as similarity
+
+    sorts = []
+
+    def counted_sort(records, **kwargs):
+        sorts.append(len(records))
+        return sorted(records, **kwargs)
+
+    monkeypatch.setattr(similarity, "sorted", counted_sort, raising=False)
+    rows = [
+        {
+            "result_id": f"match_{i:06d}",
+            "similarity": i % 256,
+            "confidence": 255,
+            "provider": "WARP" if i % 2 else "Google BinDiff",
+            "reference": {"coordinate": {"rva": hex(i)}},
+            "target": {"coordinate": {"rva": hex(99999 - i)}},
+        }
+        for i in range(100000)
+    ]
+    index = MatchIndex()
+    target = index.select(rows, "target", None, 0, 0)
+    reference = index.select(rows, "reference", None, 0, 0)
+    assert target == tuple(reversed(rows)) and reference == tuple(rows)
+    filtered = index.select(rows, "target", "WARP", 240, 200)
+    assert filtered == tuple(
+        r for r in target if r["provider"] == "WARP" and r["similarity"] >= 240
+    )
+    for offset in range(0, len(filtered), 100):
+        selected = index.select(rows, "target", "WARP", 240, 200)
+        assert selected is filtered
+        assert page(selected, offset, 100)["items"] == list(filtered[offset : offset + 100])
+    assert index.select(rows, "target", None, 0, 0) is target
+    # Arbitrary score queries evict old filters without discarding either side's ordering.
+    for threshold in range(9):
+        index.select(rows, "reference", None, threshold, 1)
+    assert len(index._filtered) == 8
+    assert index.select(rows, "reference", None, 0, 0) is reference
+    assert sorts == [100000, 100000]
+
+
+def test_slow_index_does_not_block_status_or_close_and_cannot_return_closed_job(
+    running, monkeypatch
+):
+    import binja_windbg_mcp.similarity as similarity
+
+    manager, backend, job_id = running
+    finish(manager, backend, job_id)
+    entered, release = threading.Event(), threading.Event()
+
+    def blocked_sort(records, **kwargs):
+        entered.set()
+        assert release.wait(3)
+        return sorted(records, **kwargs)
+
+    monkeypatch.setattr(similarity, "sorted", blocked_sort, raising=False)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        result = pool.submit(manager.results, job_id)
+        try:
+            assert entered.wait(1)
+            assert pool.submit(manager.status, job_id).result(timeout=1)["state"] == "completed"
+            assert pool.submit(manager.close, job_id).result(timeout=1)["state"] == "closed"
+        finally:
+            release.set()
+        with pytest.raises(SimilarityError) as caught:
+            result.result(timeout=1)
+        assert caught.value.code == "unknown_comparison"
+
+
+@pytest.mark.parametrize("poll_stalls", [False, True])
+def test_capture_timeout_only_covers_polling_and_always_closes(monkeypatch, poll_stalls):
+    from tools import similarity_capture
+
+    real_timeout = asyncio.timeout
+    budgets, calls = [], []
+
+    def shortened_timeout(delay):
+        budgets.append(delay)
+        return real_timeout(0.01)
+
+    monkeypatch.setattr(similarity_capture.asyncio, "timeout", shortened_timeout)
+
+    async def call(client, name, **arguments):
+        calls.append(name)
+        if name == "similarity_status":
+            if not arguments:
+                return {"capabilities": {"available": True}}
+            if poll_stalls:
+                await asyncio.Future()
+            return {"active": False, "state": "completed", "coverage_complete": True}
+        if name == "list_binaries":
+            return {
+                "binaries": [
+                    {"binary_id": key, "generation": 1, "identity": {}, "modified": False}
+                    for key in ("old", "new")
+                ]
+            }
+        if name == "similarity_start":
+            return {"comparison_id": "job"}
+        if name == "similarity_results":
+            # Completed reports may take longer than the entire polling budget.
+            await asyncio.sleep(0.03)
+            return {"items": [], "next_offset": None}
+        assert name == "similarity_close"
+        return {}
+
+    monkeypatch.setattr(similarity_capture, "call", call)
+
+    async def run():
+        if poll_stalls:
+            with pytest.raises(TimeoutError):
+                await similarity_capture.capture(None, "old", "new", timeout_ms=500)
+        else:
+            report = await similarity_capture.capture(None, "old", "new", timeout_ms=500)
+            assert report["input_generations_unchanged"]
+
+    asyncio.run(run())
+    assert budgets == [30.5]
+    assert calls[-1] == "similarity_close"
 
 
 def test_page_enforces_size_and_input_bounds():

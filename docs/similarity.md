@@ -112,6 +112,9 @@ be treated as a complete map.
 `min_similarity` / `min_confidence` integers from 0 to 255 (default zero).
 Matches are ordered by the selected side's RVA, then descending scores. Providers'
 scores stay separate; the companion does not turn them into a combined probability.
+Completed and partial result ordering is cached per side; repeated filtered pages
+reuse a bounded cache of row selections. Indexing and page copying do not hold the
+comparison lifecycle lock, so status and close requests can continue.
 External `raw_similarity` and `raw_confidence` retain BinDiff's `0–1` values;
 integer scores use `floor(raw * 255 + 0.5)`. These scores do not establish equivalence
 between backend versions. Competing candidates remain separate. Reciprocal reports of the same provider,
@@ -137,7 +140,9 @@ cryptographic identity guarantee.
 
 `similarity_diff` aligns instruction text, ignoring each instruction's own address
 as a matching key. Rows have `equal`, `insert`, `delete`, or `replace` kinds and
-contain the reference and target instruction or `null`. Operands remain literal:
+contain the reference and target instruction or `null`. A `replace` row always has
+both instructions; extra instructions in unequal replacement spans are `insert`
+or `delete` rows. Operands remain literal:
 relocations, symbol names and differing branch addresses can produce text changes.
 This is an agent-readable textual comparison, not BN's native visual diff or a
 semantic equivalence claim. `instructions_truncated` reports capture limits
@@ -173,6 +178,9 @@ accepts 0–100. The runner checks unchanged input generations, identity and mod
 state, and closes its comparison on success or failure. Choose `--backend external`
 for Personal, or `--backend native` and optionally `--provider WARP` for native
 acceptance. Defaults follow backend selection; full coverage is required.
+The capture polling deadline is `--timeout-ms` plus 30 seconds for cleanup grace.
+Once comparison polling completes, downloading results and disassembly pages is
+outside that deadline. The comparison is still closed if report collection fails.
 
 The synthetic Personal capture and independent assertions are checked in under
 `tests/fixtures/similarity/`. To reproduce GUI exports, comparisons and navigation,
@@ -180,6 +188,7 @@ use an empty BN6 GUI and run in its Python console (choose a new output director
 
 ```python
 from tools.similarity_gui_smoke import start
+
 start("/absolute/path/to/bindiff", "/private/tmp/new-similarity-capture")
 ```
 
