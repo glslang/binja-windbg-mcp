@@ -226,3 +226,26 @@ runtime behavior, force-quit cleanup, or other Windows security configurations. 
 security recovery and bounded sink traversal remain explicit supported outcomes.
 Structured `reachable_from_dispatch` remains follow-up #60; broader coverage import and
 report export remain deferred as specified in the [plan](binja-windbg-mcp-plan.md).
+
+
+## Personal similarity validation — 2026-09-08
+
+An isolated BN 6.0.10601 Personal GUI loaded the ABI-187 export helper and compared
+synthetic x86-64 PE fixtures with a locally built BinDiff 8 CLI. Identical and
+relocated pairs each matched both functions. The changed pair matched two functions
+and reported its additional function as unmatched. Textual differences and target
+navigation passed; function names, types, comments, bytes, generations and identities
+remained unchanged. All 172 tests passed, along with Ruff and helper build checks.
+The reproducible probe is `tools/similarity_gui_smoke.py`; reviewed results are in
+`tests/fixtures/similarity/personal.json`.
+
+The helper compiled against SDK commit `2ddf304b3275aa184e95570404539cbc4beb64c6`
+and its pinned BinExport submodule. Validation used the SDK's BinDiff fork commit
+`a83d07f038463839533ee91f487fff701537a309`, with the one-line `MutexLock(&mutex)`
+compatibility adjustment required by its pinned Abseil. This temporary CLI was not
+installed or bundled. It does not establish compatibility with every BinDiff build.
+
+Personal and native Ultimate capabilities are reported separately. Ultimate remains
+unavailable on this installation. The live similarity-to-WinDbg operation remains
+pending; existing identity-guard unit coverage and prior driver acceptance do not
+substitute for that new live handoff.

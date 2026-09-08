@@ -775,7 +775,7 @@
   },
   {
     "name": "similarity_start",
-    "description": "Start a read-only comparison of two analyzed, same-architecture PE views (Ultimate).",
+    "description": "Compare two analyzed PE views using external BinDiff or native Ultimate providers.",
     "input_schema": {
       "type": "object",
       "properties": {
@@ -810,6 +810,16 @@
           "default": 120000,
           "title": "Timeout Ms",
           "type": "integer"
+        },
+        "backend": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "native",
+            "external"
+          ],
+          "title": "Backend",
+          "type": "string"
         }
       },
       "required": [
