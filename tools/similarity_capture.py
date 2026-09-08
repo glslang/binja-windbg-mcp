@@ -61,52 +61,52 @@ async def capture(
                 if not status["active"]:
                     break
                 await asyncio.sleep(0.1)
-            if status["state"] != "completed" or not status["coverage_complete"]:
-                raise RuntimeError("comparison did not complete with full coverage")
-            matches = await pages(client, "similarity_results", comparison_id=comparison_id)
-            unmatched = {
-                side: await pages(
-                    client,
-                    "similarity_results",
-                    comparison_id=comparison_id,
-                    side=side,
-                    kind="unmatched",
-                )
-                for side in ("reference", "target")
-            }
-            differences = []
-            for result in matches[:diff_count]:
-                first = await call(
-                    client,
-                    "similarity_diff",
-                    comparison_id=comparison_id,
-                    result_id=result["result_id"],
-                    limit=1,
-                )
-                first["items"] = await pages(
-                    client,
-                    "similarity_diff",
-                    comparison_id=comparison_id,
-                    result_id=result["result_id"],
-                )
-                first["next_offset"] = None
-                first["truncated"] = False
-                differences.append(first)
-            after = (await call(client, "list_binaries"))["binaries"]
-            for binary_id in (reference, target):
-                old = next(b for b in before if b["binary_id"] == binary_id)
-                new = next(b for b in after if b["binary_id"] == binary_id)
-                if any(old[k] != new[k] for k in ("generation", "identity", "modified")):
-                    raise RuntimeError("comparison inputs changed during capture")
-            return {
-                "capture_version": 1,
-                "capabilities": capabilities,
-                "comparison": status,
-                "matches": matches,
-                "unmatched": unmatched,
-                "differences": differences,
-                "input_generations_unchanged": True,
-            }
+        if status["state"] != "completed" or not status["coverage_complete"]:
+            raise RuntimeError("comparison did not complete with full coverage")
+        matches = await pages(client, "similarity_results", comparison_id=comparison_id)
+        unmatched = {
+            side: await pages(
+                client,
+                "similarity_results",
+                comparison_id=comparison_id,
+                side=side,
+                kind="unmatched",
+            )
+            for side in ("reference", "target")
+        }
+        differences = []
+        for result in matches[:diff_count]:
+            first = await call(
+                client,
+                "similarity_diff",
+                comparison_id=comparison_id,
+                result_id=result["result_id"],
+                limit=1,
+            )
+            first["items"] = await pages(
+                client,
+                "similarity_diff",
+                comparison_id=comparison_id,
+                result_id=result["result_id"],
+            )
+            first["next_offset"] = None
+            first["truncated"] = False
+            differences.append(first)
+        after = (await call(client, "list_binaries"))["binaries"]
+        for binary_id in (reference, target):
+            old = next(b for b in before if b["binary_id"] == binary_id)
+            new = next(b for b in after if b["binary_id"] == binary_id)
+            if any(old[k] != new[k] for k in ("generation", "identity", "modified")):
+                raise RuntimeError("comparison inputs changed during capture")
+        return {
+            "capture_version": 1,
+            "capabilities": capabilities,
+            "comparison": status,
+            "matches": matches,
+            "unmatched": unmatched,
+            "differences": differences,
+            "input_generations_unchanged": True,
+        }
     finally:
         if comparison_id is not None:
             await call(client, "similarity_close", comparison_id=comparison_id)
