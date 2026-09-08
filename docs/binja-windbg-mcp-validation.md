@@ -227,7 +227,6 @@ security recovery and bounded sink traversal remain explicit supported outcomes.
 Structured `reachable_from_dispatch` remains follow-up #60; broader coverage import and
 report export remain deferred as specified in the [plan](binja-windbg-mcp-plan.md).
 
-
 ## Personal similarity validation — 2026-09-08
 
 An isolated BN 6.0.10601 Personal GUI loaded the ABI-187 export helper and compared
