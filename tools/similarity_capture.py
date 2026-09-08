@@ -1,4 +1,4 @@
-"""Opt-in Ultimate comparison capture over the companion's authenticated MCP endpoint."""
+"""Opt-in Personal or Ultimate comparison capture over the companion's authenticated MCP endpoint."""
 
 import argparse
 import asyncio
@@ -36,10 +36,12 @@ async def pages(client, name, **arguments):
         offset = following
 
 
-async def capture(client, reference, target, timeout_ms=120000, diff_count=10):
+async def capture(
+    client, reference, target, timeout_ms=120000, diff_count=10, backend="auto", providers=None
+):
     capabilities = (await call(client, "similarity_status"))["capabilities"]
-    if not all(capabilities["providers"].get(name) for name in ("Google BinDiff", "WARP")):
-        raise RuntimeError("capture requires BN6 Ultimate with Google BinDiff and WARP")
+    if not capabilities["available"]:
+        raise RuntimeError("no similarity backend is available; check similarity_status")
     before = (await call(client, "list_binaries"))["binaries"]
     comparison_id = None
     try:
@@ -49,6 +51,8 @@ async def capture(client, reference, target, timeout_ms=120000, diff_count=10):
             reference_binary_id=reference,
             target_binary_id=target,
             timeout_ms=timeout_ms,
+            backend=backend,
+            providers=providers,
         )
         comparison_id = started["comparison_id"]
         async with asyncio.timeout(timeout_ms / 1000 + 30):
@@ -118,6 +122,8 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--timeout-ms", type=int, default=120000)
     parser.add_argument("--diff-count", type=int, default=10)
+    parser.add_argument("--backend", choices=("auto", "native", "external"), default="auto")
+    parser.add_argument("--provider", action="append", choices=("Google BinDiff", "WARP"))
     args = parser.parse_args()
     if not 1 <= args.timeout_ms <= 600000 or not 0 <= args.diff_count <= 100:
         parser.error("timeout-ms must be 1–600000 and diff-count 0–100")
@@ -142,7 +148,13 @@ def main():
         ) as http:
             async with Client(streamable_http_client(config["url"], http_client=http)) as client:
                 return await capture(
-                    client, args.reference, args.target, args.timeout_ms, args.diff_count
+                    client,
+                    args.reference,
+                    args.target,
+                    args.timeout_ms,
+                    args.diff_count,
+                    args.backend,
+                    args.provider,
                 )
 
     report = asyncio.run(run())

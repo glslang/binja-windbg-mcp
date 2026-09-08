@@ -1,0 +1,1239 @@
+{
+  "version": "6.0.10601 Personal",
+  "capabilities": {
+    "available": true,
+    "providers": {
+      "Google BinDiff": true,
+      "WARP": false
+    },
+    "backends": {
+      "native": {
+        "available": false,
+        "requires": "Binary Ninja 6 Ultimate",
+        "providers": {
+          "Google BinDiff": false,
+          "WARP": false
+        },
+        "version": "6.0.10601 Personal",
+        "edition": "User"
+      },
+      "external": {
+        "available": true,
+        "providers": {
+          "Google BinDiff": true,
+          "WARP": false
+        },
+        "exporter": {
+          "available": true,
+          "abi": 1,
+          "core_abi": 187
+        },
+        "executable": {
+          "path": "bindiff",
+          "version": "8",
+          "available": true
+        },
+        "reason": ""
+      }
+    }
+  },
+  "comparisons": {
+    "identical": {
+      "comparison_id": "comparison-identical",
+      "state": "completed",
+      "active": false,
+      "closing": false,
+      "progress": null,
+      "stop_reason": null,
+      "providers": [
+        "Google BinDiff"
+      ],
+      "backend": "external",
+      "stage": "importing",
+      "omitted_functions": {
+        "reference": 0,
+        "target": 0
+      },
+      "binary_ids": {
+        "reference": "reference",
+        "target": "identical"
+      },
+      "snapshots": {
+        "reference": {
+          "file_sha256": "c3bf8a2704588c4bdd29cb79b9e2a0d4801053a0a3eb9a850c8d55413b032734",
+          "hash_source": "original Raw view",
+          "image_name": "reference.exe",
+          "binary_id": "reference",
+          "path": "fixtures/reference.exe",
+          "display_name": "reference.exe",
+          "active": false,
+          "architecture": "x86_64",
+          "analysis_state": "IdleState",
+          "image_base": "0x0000000140000000",
+          "identity": {
+            "timestamp": 1,
+            "size": 8192,
+            "pdb": null
+          },
+          "generation": [
+            "reference",
+            5368709120,
+            0
+          ],
+          "modified": false
+        },
+        "target": {
+          "file_sha256": "c3bf8a2704588c4bdd29cb79b9e2a0d4801053a0a3eb9a850c8d55413b032734",
+          "hash_source": "original Raw view",
+          "image_name": "identical.exe",
+          "binary_id": "identical",
+          "path": "fixtures/identical.exe",
+          "display_name": "identical.exe",
+          "active": false,
+          "architecture": "x86_64",
+          "analysis_state": "IdleState",
+          "image_base": "0x0000000140000000",
+          "identity": {
+            "timestamp": 1,
+            "size": 8192,
+            "pdb": null
+          },
+          "generation": [
+            "identical",
+            5368709120,
+            0
+          ],
+          "modified": false
+        }
+      },
+      "match_count": 2,
+      "coverage_complete": true,
+      "unresolved_results": 0,
+      "error": null,
+      "side": "target",
+      "kind": "matches",
+      "items": [
+        {
+          "result_id": "match_1",
+          "provider": "Google BinDiff",
+          "similarity": 255,
+          "confidence": 248,
+          "raw_similarity": 1.0,
+          "raw_confidence": 0.9706877692486436,
+          "reference": {
+            "binary_id": "reference",
+            "generation": [
+              "reference",
+              5368709120,
+              0
+            ],
+            "coordinate": {
+              "module": "reference",
+              "image_name": "reference.exe",
+              "identity": {
+                "timestamp": 1,
+                "size": 8192,
+                "pdb": null
+              },
+              "rva": "0x1000"
+            },
+            "address": "0x0000000140001000",
+            "name": "_start"
+          },
+          "target": {
+            "binary_id": "identical",
+            "generation": [
+              "identical",
+              5368709120,
+              0
+            ],
+            "coordinate": {
+              "module": "identical",
+              "image_name": "identical.exe",
+              "identity": {
+                "timestamp": 1,
+                "size": 8192,
+                "pdb": null
+              },
+              "rva": "0x1000"
+            },
+            "address": "0x0000000140001000",
+            "name": "_start"
+          },
+          "backend": "external"
+        },
+        {
+          "result_id": "match_2",
+          "provider": "Google BinDiff",
+          "similarity": 255,
+          "confidence": 248,
+          "raw_similarity": 1.0,
+          "raw_confidence": 0.9706877692486436,
+          "reference": {
+            "binary_id": "reference",
+            "generation": [
+              "reference",
+              5368709120,
+              0
+            ],
+            "coordinate": {
+              "module": "reference",
+              "image_name": "reference.exe",
+              "identity": {
+                "timestamp": 1,
+                "size": 8192,
+                "pdb": null
+              },
+              "rva": "0x1020"
+            },
+            "address": "0x0000000140001020",
+            "name": "sub_140001020"
+          },
+          "target": {
+            "binary_id": "identical",
+            "generation": [
+              "identical",
+              5368709120,
+              0
+            ],
+            "coordinate": {
+              "module": "identical",
+              "image_name": "identical.exe",
+              "identity": {
+                "timestamp": 1,
+                "size": 8192,
+                "pdb": null
+              },
+              "rva": "0x1020"
+            },
+            "address": "0x0000000140001020",
+            "name": "sub_140001020"
+          },
+          "backend": "external"
+        }
+      ],
+      "total": 2,
+      "next_offset": null,
+      "truncated": false,
+      "unmatched": {
+        "reference": [],
+        "target": []
+      },
+      "diffs": [
+        {
+          "comparison_id": "comparison-identical",
+          "result": {
+            "result_id": "match_1",
+            "provider": "Google BinDiff",
+            "similarity": 255,
+            "confidence": 248,
+            "raw_similarity": 1.0,
+            "raw_confidence": 0.9706877692486436,
+            "reference": {
+              "binary_id": "reference",
+              "generation": [
+                "reference",
+                5368709120,
+                0
+              ],
+              "coordinate": {
+                "module": "reference",
+                "image_name": "reference.exe",
+                "identity": {
+                  "timestamp": 1,
+                  "size": 8192,
+                  "pdb": null
+                },
+                "rva": "0x1000"
+              },
+              "address": "0x0000000140001000",
+              "name": "_start"
+            },
+            "target": {
+              "binary_id": "identical",
+              "generation": [
+                "identical",
+                5368709120,
+                0
+              ],
+              "coordinate": {
+                "module": "identical",
+                "image_name": "identical.exe",
+                "identity": {
+                  "timestamp": 1,
+                  "size": 8192,
+                  "pdb": null
+                },
+                "rva": "0x1000"
+              },
+              "address": "0x0000000140001000",
+              "name": "_start"
+            },
+            "backend": "external"
+          },
+          "comparison_kind": "instruction_text",
+          "instructions_truncated": {
+            "reference": false,
+            "target": false
+          },
+          "items": [
+            {
+              "kind": "equal",
+              "reference": {
+                "address": "0x0000000140001000",
+                "rva": "0x1000",
+                "text": "call    0x140001020",
+                "text_truncated": false
+              },
+              "target": {
+                "address": "0x0000000140001000",
+                "rva": "0x1000",
+                "text": "call    0x140001020",
+                "text_truncated": false
+              }
+            },
+            {
+              "kind": "equal",
+              "reference": {
+                "address": "0x0000000140001005",
+                "rva": "0x1005",
+                "text": "retn    ",
+                "text_truncated": false
+              },
+              "target": {
+                "address": "0x0000000140001005",
+                "rva": "0x1005",
+                "text": "retn    ",
+                "text_truncated": false
+              }
+            }
+          ],
+          "total": 2,
+          "next_offset": null,
+          "truncated": false
+        },
+        {
+          "comparison_id": "comparison-identical",
+          "result": {
+            "result_id": "match_2",
+            "provider": "Google BinDiff",
+            "similarity": 255,
+            "confidence": 248,
+            "raw_similarity": 1.0,
+            "raw_confidence": 0.9706877692486436,
+            "reference": {
+              "binary_id": "reference",
+              "generation": [
+                "reference",
+                5368709120,
+                0
+              ],
+              "coordinate": {
+                "module": "reference",
+                "image_name": "reference.exe",
+                "identity": {
+                  "timestamp": 1,
+                  "size": 8192,
+                  "pdb": null
+                },
+                "rva": "0x1020"
+              },
+              "address": "0x0000000140001020",
+              "name": "sub_140001020"
+            },
+            "target": {
+              "binary_id": "identical",
+              "generation": [
+                "identical",
+                5368709120,
+                0
+              ],
+              "coordinate": {
+                "module": "identical",
+                "image_name": "identical.exe",
+                "identity": {
+                  "timestamp": 1,
+                  "size": 8192,
+                  "pdb": null
+                },
+                "rva": "0x1020"
+              },
+              "address": "0x0000000140001020",
+              "name": "sub_140001020"
+            },
+            "backend": "external"
+          },
+          "comparison_kind": "instruction_text",
+          "instructions_truncated": {
+            "reference": false,
+            "target": false
+          },
+          "items": [
+            {
+              "kind": "equal",
+              "reference": {
+                "address": "0x0000000140001020",
+                "rva": "0x1020",
+                "text": "mov     eax, 0x1",
+                "text_truncated": false
+              },
+              "target": {
+                "address": "0x0000000140001020",
+                "rva": "0x1020",
+                "text": "mov     eax, 0x1",
+                "text_truncated": false
+              }
+            },
+            {
+              "kind": "equal",
+              "reference": {
+                "address": "0x0000000140001025",
+                "rva": "0x1025",
+                "text": "retn    ",
+                "text_truncated": false
+              },
+              "target": {
+                "address": "0x0000000140001025",
+                "rva": "0x1025",
+                "text": "retn    ",
+                "text_truncated": false
+              }
+            }
+          ],
+          "total": 2,
+          "next_offset": null,
+          "truncated": false
+        }
+      ],
+      "navigation": {
+        "address": "0x0000000140001000",
+        "coordinate": {
+          "module": "identical",
+          "image_name": "identical.exe",
+          "identity": {
+            "timestamp": 1,
+            "size": 8192,
+            "pdb": null
+          },
+          "rva": "0x1000"
+        }
+      }
+    },
+    "relocated": {
+      "comparison_id": "comparison-relocated",
+      "state": "completed",
+      "active": false,
+      "closing": false,
+      "progress": null,
+      "stop_reason": null,
+      "providers": [
+        "Google BinDiff"
+      ],
+      "backend": "external",
+      "stage": "importing",
+      "omitted_functions": {
+        "reference": 0,
+        "target": 0
+      },
+      "binary_ids": {
+        "reference": "reference",
+        "target": "relocated"
+      },
+      "snapshots": {
+        "reference": {
+          "file_sha256": "c3bf8a2704588c4bdd29cb79b9e2a0d4801053a0a3eb9a850c8d55413b032734",
+          "hash_source": "original Raw view",
+          "image_name": "reference.exe",
+          "binary_id": "reference",
+          "path": "fixtures/reference.exe",
+          "display_name": "reference.exe",
+          "active": false,
+          "architecture": "x86_64",
+          "analysis_state": "IdleState",
+          "image_base": "0x0000000140000000",
+          "identity": {
+            "timestamp": 1,
+            "size": 8192,
+            "pdb": null
+          },
+          "generation": [
+            "reference",
+            5368709120,
+            0
+          ],
+          "modified": false
+        },
+        "target": {
+          "file_sha256": "12586d76bf948515f3b1c78b42de87cc45f4e68bcc0f5b17a833399007ec8e53",
+          "hash_source": "original Raw view",
+          "image_name": "relocated.exe",
+          "binary_id": "relocated",
+          "path": "fixtures/relocated.exe",
+          "display_name": "relocated.exe",
+          "active": false,
+          "architecture": "x86_64",
+          "analysis_state": "IdleState",
+          "image_base": "0x0000000180000000",
+          "identity": {
+            "timestamp": 1,
+            "size": 8192,
+            "pdb": null
+          },
+          "generation": [
+            "relocated",
+            6442450944,
+            0
+          ],
+          "modified": false
+        }
+      },
+      "match_count": 2,
+      "coverage_complete": true,
+      "unresolved_results": 0,
+      "error": null,
+      "side": "target",
+      "kind": "matches",
+      "items": [
+        {
+          "result_id": "match_1",
+          "provider": "Google BinDiff",
+          "similarity": 255,
+          "confidence": 248,
+          "raw_similarity": 1.0,
+          "raw_confidence": 0.9706877692486436,
+          "reference": {
+            "binary_id": "reference",
+            "generation": [
+              "reference",
+              5368709120,
+              0
+            ],
+            "coordinate": {
+              "module": "reference",
+              "image_name": "reference.exe",
+              "identity": {
+                "timestamp": 1,
+                "size": 8192,
+                "pdb": null
+              },
+              "rva": "0x1000"
+            },
+            "address": "0x0000000140001000",
+            "name": "_start"
+          },
+          "target": {
+            "binary_id": "relocated",
+            "generation": [
+              "relocated",
+              6442450944,
+              0
+            ],
+            "coordinate": {
+              "module": "relocated",
+              "image_name": "relocated.exe",
+              "identity": {
+                "timestamp": 1,
+                "size": 8192,
+                "pdb": null
+              },
+              "rva": "0x1000"
+            },
+            "address": "0x0000000180001000",
+            "name": "_start"
+          },
+          "backend": "external"
+        },
+        {
+          "result_id": "match_2",
+          "provider": "Google BinDiff",
+          "similarity": 255,
+          "confidence": 231,
+          "raw_similarity": 1.0,
+          "raw_confidence": 0.9046505351008906,
+          "reference": {
+            "binary_id": "reference",
+            "generation": [
+              "reference",
+              5368709120,
+              0
+            ],
+            "coordinate": {
+              "module": "reference",
+              "image_name": "reference.exe",
+              "identity": {
+                "timestamp": 1,
+                "size": 8192,
+                "pdb": null
+              },
+              "rva": "0x1020"
+            },
+            "address": "0x0000000140001020",
+            "name": "sub_140001020"
+          },
+          "target": {
+            "binary_id": "relocated",
+            "generation": [
+              "relocated",
+              6442450944,
+              0
+            ],
+            "coordinate": {
+              "module": "relocated",
+              "image_name": "relocated.exe",
+              "identity": {
+                "timestamp": 1,
+                "size": 8192,
+                "pdb": null
+              },
+              "rva": "0x1020"
+            },
+            "address": "0x0000000180001020",
+            "name": "sub_180001020"
+          },
+          "backend": "external"
+        }
+      ],
+      "total": 2,
+      "next_offset": null,
+      "truncated": false,
+      "unmatched": {
+        "reference": [],
+        "target": []
+      },
+      "diffs": [
+        {
+          "comparison_id": "comparison-relocated",
+          "result": {
+            "result_id": "match_1",
+            "provider": "Google BinDiff",
+            "similarity": 255,
+            "confidence": 248,
+            "raw_similarity": 1.0,
+            "raw_confidence": 0.9706877692486436,
+            "reference": {
+              "binary_id": "reference",
+              "generation": [
+                "reference",
+                5368709120,
+                0
+              ],
+              "coordinate": {
+                "module": "reference",
+                "image_name": "reference.exe",
+                "identity": {
+                  "timestamp": 1,
+                  "size": 8192,
+                  "pdb": null
+                },
+                "rva": "0x1000"
+              },
+              "address": "0x0000000140001000",
+              "name": "_start"
+            },
+            "target": {
+              "binary_id": "relocated",
+              "generation": [
+                "relocated",
+                6442450944,
+                0
+              ],
+              "coordinate": {
+                "module": "relocated",
+                "image_name": "relocated.exe",
+                "identity": {
+                  "timestamp": 1,
+                  "size": 8192,
+                  "pdb": null
+                },
+                "rva": "0x1000"
+              },
+              "address": "0x0000000180001000",
+              "name": "_start"
+            },
+            "backend": "external"
+          },
+          "comparison_kind": "instruction_text",
+          "instructions_truncated": {
+            "reference": false,
+            "target": false
+          },
+          "items": [
+            {
+              "kind": "replace",
+              "reference": {
+                "address": "0x0000000140001000",
+                "rva": "0x1000",
+                "text": "call    0x140001020",
+                "text_truncated": false
+              },
+              "target": {
+                "address": "0x0000000180001000",
+                "rva": "0x1000",
+                "text": "call    0x180001020",
+                "text_truncated": false
+              }
+            },
+            {
+              "kind": "equal",
+              "reference": {
+                "address": "0x0000000140001005",
+                "rva": "0x1005",
+                "text": "retn    ",
+                "text_truncated": false
+              },
+              "target": {
+                "address": "0x0000000180001005",
+                "rva": "0x1005",
+                "text": "retn    ",
+                "text_truncated": false
+              }
+            }
+          ],
+          "total": 2,
+          "next_offset": null,
+          "truncated": false
+        },
+        {
+          "comparison_id": "comparison-relocated",
+          "result": {
+            "result_id": "match_2",
+            "provider": "Google BinDiff",
+            "similarity": 255,
+            "confidence": 231,
+            "raw_similarity": 1.0,
+            "raw_confidence": 0.9046505351008906,
+            "reference": {
+              "binary_id": "reference",
+              "generation": [
+                "reference",
+                5368709120,
+                0
+              ],
+              "coordinate": {
+                "module": "reference",
+                "image_name": "reference.exe",
+                "identity": {
+                  "timestamp": 1,
+                  "size": 8192,
+                  "pdb": null
+                },
+                "rva": "0x1020"
+              },
+              "address": "0x0000000140001020",
+              "name": "sub_140001020"
+            },
+            "target": {
+              "binary_id": "relocated",
+              "generation": [
+                "relocated",
+                6442450944,
+                0
+              ],
+              "coordinate": {
+                "module": "relocated",
+                "image_name": "relocated.exe",
+                "identity": {
+                  "timestamp": 1,
+                  "size": 8192,
+                  "pdb": null
+                },
+                "rva": "0x1020"
+              },
+              "address": "0x0000000180001020",
+              "name": "sub_180001020"
+            },
+            "backend": "external"
+          },
+          "comparison_kind": "instruction_text",
+          "instructions_truncated": {
+            "reference": false,
+            "target": false
+          },
+          "items": [
+            {
+              "kind": "equal",
+              "reference": {
+                "address": "0x0000000140001020",
+                "rva": "0x1020",
+                "text": "mov     eax, 0x1",
+                "text_truncated": false
+              },
+              "target": {
+                "address": "0x0000000180001020",
+                "rva": "0x1020",
+                "text": "mov     eax, 0x1",
+                "text_truncated": false
+              }
+            },
+            {
+              "kind": "equal",
+              "reference": {
+                "address": "0x0000000140001025",
+                "rva": "0x1025",
+                "text": "retn    ",
+                "text_truncated": false
+              },
+              "target": {
+                "address": "0x0000000180001025",
+                "rva": "0x1025",
+                "text": "retn    ",
+                "text_truncated": false
+              }
+            }
+          ],
+          "total": 2,
+          "next_offset": null,
+          "truncated": false
+        }
+      ],
+      "navigation": {
+        "address": "0x0000000180001000",
+        "coordinate": {
+          "module": "relocated",
+          "image_name": "relocated.exe",
+          "identity": {
+            "timestamp": 1,
+            "size": 8192,
+            "pdb": null
+          },
+          "rva": "0x1000"
+        }
+      }
+    },
+    "changed": {
+      "comparison_id": "comparison-changed",
+      "state": "completed",
+      "active": false,
+      "closing": false,
+      "progress": null,
+      "stop_reason": null,
+      "providers": [
+        "Google BinDiff"
+      ],
+      "backend": "external",
+      "stage": "importing",
+      "omitted_functions": {
+        "reference": 0,
+        "target": 0
+      },
+      "binary_ids": {
+        "reference": "reference",
+        "target": "changed"
+      },
+      "snapshots": {
+        "reference": {
+          "file_sha256": "c3bf8a2704588c4bdd29cb79b9e2a0d4801053a0a3eb9a850c8d55413b032734",
+          "hash_source": "original Raw view",
+          "image_name": "reference.exe",
+          "binary_id": "reference",
+          "path": "fixtures/reference.exe",
+          "display_name": "reference.exe",
+          "active": false,
+          "architecture": "x86_64",
+          "analysis_state": "IdleState",
+          "image_base": "0x0000000140000000",
+          "identity": {
+            "timestamp": 1,
+            "size": 8192,
+            "pdb": null
+          },
+          "generation": [
+            "reference",
+            5368709120,
+            0
+          ],
+          "modified": false
+        },
+        "target": {
+          "file_sha256": "297d5527406e870d98532468f0de20c22bc45d7dfdfa5ee97a160390a1d2c79c",
+          "hash_source": "original Raw view",
+          "image_name": "changed.exe",
+          "binary_id": "changed",
+          "path": "fixtures/changed.exe",
+          "display_name": "changed.exe",
+          "active": true,
+          "architecture": "x86_64",
+          "analysis_state": "IdleState",
+          "image_base": "0x0000000140000000",
+          "identity": {
+            "timestamp": 2,
+            "size": 8192,
+            "pdb": null
+          },
+          "generation": [
+            "changed",
+            5368709120,
+            0
+          ],
+          "modified": false
+        }
+      },
+      "match_count": 2,
+      "coverage_complete": true,
+      "unresolved_results": 0,
+      "error": null,
+      "side": "target",
+      "kind": "matches",
+      "items": [
+        {
+          "result_id": "match_1",
+          "provider": "Google BinDiff",
+          "similarity": 176,
+          "confidence": 248,
+          "raw_similarity": 0.689188316166537,
+          "raw_confidence": 0.9706877692486436,
+          "reference": {
+            "binary_id": "reference",
+            "generation": [
+              "reference",
+              5368709120,
+              0
+            ],
+            "coordinate": {
+              "module": "reference",
+              "image_name": "reference.exe",
+              "identity": {
+                "timestamp": 1,
+                "size": 8192,
+                "pdb": null
+              },
+              "rva": "0x1000"
+            },
+            "address": "0x0000000140001000",
+            "name": "_start"
+          },
+          "target": {
+            "binary_id": "changed",
+            "generation": [
+              "changed",
+              5368709120,
+              0
+            ],
+            "coordinate": {
+              "module": "changed",
+              "image_name": "changed.exe",
+              "identity": {
+                "timestamp": 2,
+                "size": 8192,
+                "pdb": null
+              },
+              "rva": "0x1000"
+            },
+            "address": "0x0000000140001000",
+            "name": "_start"
+          },
+          "backend": "external"
+        },
+        {
+          "result_id": "match_2",
+          "provider": "Google BinDiff",
+          "similarity": 167,
+          "confidence": 248,
+          "raw_similarity": 0.6552142442428345,
+          "raw_confidence": 0.9706877692486436,
+          "reference": {
+            "binary_id": "reference",
+            "generation": [
+              "reference",
+              5368709120,
+              0
+            ],
+            "coordinate": {
+              "module": "reference",
+              "image_name": "reference.exe",
+              "identity": {
+                "timestamp": 1,
+                "size": 8192,
+                "pdb": null
+              },
+              "rva": "0x1020"
+            },
+            "address": "0x0000000140001020",
+            "name": "sub_140001020"
+          },
+          "target": {
+            "binary_id": "changed",
+            "generation": [
+              "changed",
+              5368709120,
+              0
+            ],
+            "coordinate": {
+              "module": "changed",
+              "image_name": "changed.exe",
+              "identity": {
+                "timestamp": 2,
+                "size": 8192,
+                "pdb": null
+              },
+              "rva": "0x1020"
+            },
+            "address": "0x0000000140001020",
+            "name": "sub_140001020"
+          },
+          "backend": "external"
+        }
+      ],
+      "total": 2,
+      "next_offset": null,
+      "truncated": false,
+      "unmatched": {
+        "reference": [],
+        "target": [
+          {
+            "binary_id": "changed",
+            "generation": [
+              "changed",
+              5368709120,
+              0
+            ],
+            "coordinate": {
+              "module": "changed",
+              "image_name": "changed.exe",
+              "identity": {
+                "timestamp": 2,
+                "size": 8192,
+                "pdb": null
+              },
+              "rva": "0x1040"
+            },
+            "address": "0x0000000140001040",
+            "name": "sub_140001040"
+          }
+        ]
+      },
+      "diffs": [
+        {
+          "comparison_id": "comparison-changed",
+          "result": {
+            "result_id": "match_1",
+            "provider": "Google BinDiff",
+            "similarity": 176,
+            "confidence": 248,
+            "raw_similarity": 0.689188316166537,
+            "raw_confidence": 0.9706877692486436,
+            "reference": {
+              "binary_id": "reference",
+              "generation": [
+                "reference",
+                5368709120,
+                0
+              ],
+              "coordinate": {
+                "module": "reference",
+                "image_name": "reference.exe",
+                "identity": {
+                  "timestamp": 1,
+                  "size": 8192,
+                  "pdb": null
+                },
+                "rva": "0x1000"
+              },
+              "address": "0x0000000140001000",
+              "name": "_start"
+            },
+            "target": {
+              "binary_id": "changed",
+              "generation": [
+                "changed",
+                5368709120,
+                0
+              ],
+              "coordinate": {
+                "module": "changed",
+                "image_name": "changed.exe",
+                "identity": {
+                  "timestamp": 2,
+                  "size": 8192,
+                  "pdb": null
+                },
+                "rva": "0x1000"
+              },
+              "address": "0x0000000140001000",
+              "name": "_start"
+            },
+            "backend": "external"
+          },
+          "comparison_kind": "instruction_text",
+          "instructions_truncated": {
+            "reference": false,
+            "target": false
+          },
+          "items": [
+            {
+              "kind": "equal",
+              "reference": {
+                "address": "0x0000000140001000",
+                "rva": "0x1000",
+                "text": "call    0x140001020",
+                "text_truncated": false
+              },
+              "target": {
+                "address": "0x0000000140001000",
+                "rva": "0x1000",
+                "text": "call    0x140001020",
+                "text_truncated": false
+              }
+            },
+            {
+              "kind": "insert",
+              "reference": null,
+              "target": {
+                "address": "0x0000000140001005",
+                "rva": "0x1005",
+                "text": "call    0x140001040",
+                "text_truncated": false
+              }
+            },
+            {
+              "kind": "equal",
+              "reference": {
+                "address": "0x0000000140001005",
+                "rva": "0x1005",
+                "text": "retn    ",
+                "text_truncated": false
+              },
+              "target": {
+                "address": "0x000000014000100a",
+                "rva": "0x100a",
+                "text": "retn    ",
+                "text_truncated": false
+              }
+            }
+          ],
+          "total": 3,
+          "next_offset": null,
+          "truncated": false
+        },
+        {
+          "comparison_id": "comparison-changed",
+          "result": {
+            "result_id": "match_2",
+            "provider": "Google BinDiff",
+            "similarity": 167,
+            "confidence": 248,
+            "raw_similarity": 0.6552142442428345,
+            "raw_confidence": 0.9706877692486436,
+            "reference": {
+              "binary_id": "reference",
+              "generation": [
+                "reference",
+                5368709120,
+                0
+              ],
+              "coordinate": {
+                "module": "reference",
+                "image_name": "reference.exe",
+                "identity": {
+                  "timestamp": 1,
+                  "size": 8192,
+                  "pdb": null
+                },
+                "rva": "0x1020"
+              },
+              "address": "0x0000000140001020",
+              "name": "sub_140001020"
+            },
+            "target": {
+              "binary_id": "changed",
+              "generation": [
+                "changed",
+                5368709120,
+                0
+              ],
+              "coordinate": {
+                "module": "changed",
+                "image_name": "changed.exe",
+                "identity": {
+                  "timestamp": 2,
+                  "size": 8192,
+                  "pdb": null
+                },
+                "rva": "0x1020"
+              },
+              "address": "0x0000000140001020",
+              "name": "sub_140001020"
+            },
+            "backend": "external"
+          },
+          "comparison_kind": "instruction_text",
+          "instructions_truncated": {
+            "reference": false,
+            "target": false
+          },
+          "items": [
+            {
+              "kind": "replace",
+              "reference": {
+                "address": "0x0000000140001020",
+                "rva": "0x1020",
+                "text": "mov     eax, 0x1",
+                "text_truncated": false
+              },
+              "target": {
+                "address": "0x0000000140001020",
+                "rva": "0x1020",
+                "text": "xor     eax, eax",
+                "text_truncated": false
+              }
+            },
+            {
+              "kind": "replace",
+              "reference": null,
+              "target": {
+                "address": "0x0000000140001022",
+                "rva": "0x1022",
+                "text": "inc     eax",
+                "text_truncated": false
+              }
+            },
+            {
+              "kind": "replace",
+              "reference": null,
+              "target": {
+                "address": "0x0000000140001024",
+                "rva": "0x1024",
+                "text": "nop     ",
+                "text_truncated": false
+              }
+            },
+            {
+              "kind": "equal",
+              "reference": {
+                "address": "0x0000000140001025",
+                "rva": "0x1025",
+                "text": "retn    ",
+                "text_truncated": false
+              },
+              "target": {
+                "address": "0x0000000140001025",
+                "rva": "0x1025",
+                "text": "retn    ",
+                "text_truncated": false
+              }
+            }
+          ],
+          "total": 4,
+          "next_offset": null,
+          "truncated": false
+        }
+      ],
+      "navigation": {
+        "address": "0x0000000140001000",
+        "coordinate": {
+          "module": "changed",
+          "image_name": "changed.exe",
+          "identity": {
+            "timestamp": 2,
+            "size": 8192,
+            "pdb": null
+          },
+          "rva": "0x1000"
+        }
+      }
+    }
+  },
+  "unchanged": true,
+  "analysis_unchanged": true,
+  "ok": true
+}

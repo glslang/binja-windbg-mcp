@@ -6,9 +6,10 @@ This plugin adds PE identity/RVA coordinates, structured driver evidence, and op
 WinDbg following and focused actions. It uses the **official MCP Python SDK 2.1.1**.
 
 The optional [binary similarity tools](docs/similarity.md) compare two open PE builds
-using BN6 Ultimate's BinDiff and WARP providers and return agent-readable disassembly
-differences. Existing Personal workflows remain supported. Ultimate execution and
-live similarity-to-debugger acceptance are still pending.
+using external BinDiff on Personal or native BinDiff/WARP on Ultimate, and return
+agent-readable disassembly differences. Personal requires the optional export helper
+and a user-installed BinDiff CLI; see the setup guide. Real Personal comparisons
+passed; Ultimate execution and live WinDbg handoff acceptance remain pending.
 
 Driver analysis works without WinDbg. The companion reads Binary Ninja's structured IL
 through its Python API; native MCP currently renders IL as text. It selects views by its

@@ -65,6 +65,10 @@ class Comparison:
     target: str
     providers: tuple[str, ...]
     timeout_ms: int
+    backend_name: str = "native"
+    adapter: object = None
+    stage: str = "preparing"
+    omitted: dict = field(default_factory=dict)
     id: str = field(default_factory=lambda: uuid.uuid4().hex)
     phase: str = "preparing"
     reason: str | None = None
@@ -87,9 +91,9 @@ class Comparison:
 class SimilarityManager:
     def __init__(self, workspace, backend=None):
         if backend is None:
-            from .similarity_adapter import NativeSimilarity
+            from .similarity_backends import SimilarityBackends
 
-            backend = NativeSimilarity(workspace)
+            backend = SimilarityBackends(workspace)
         self.backend = backend
         self._lock = threading.RLock()
         self._jobs = {}
@@ -116,6 +120,9 @@ class SimilarityManager:
             "progress": job.progress,
             "stop_reason": job.reason,
             "providers": list(job.providers),
+            "backend": job.backend_name,
+            "stage": job.stage,
+            "omitted_functions": copy.deepcopy(job.omitted),
             "binary_ids": {"reference": job.reference, "target": job.target},
             "snapshots": copy.deepcopy(job.snapshots),
             "match_count": len(job.records),
@@ -136,7 +143,14 @@ class SimilarityManager:
                 "comparisons": [self._status(j) for j in self._jobs.values()],
             }
 
-    def start(self, reference_binary_id, target_binary_id, providers=None, timeout_ms=120000):
+    def start(
+        self,
+        reference_binary_id,
+        target_binary_id,
+        providers=None,
+        timeout_ms=120000,
+        backend="auto",
+    ):
         require(
             bool(reference_binary_id)
             and bool(target_binary_id)
@@ -144,6 +158,8 @@ class SimilarityManager:
             "invalid_params",
             "select two distinct companion binary IDs",
         )
+        requested = providers
+        require(backend in ("auto", "native", "external"), "invalid_params", "unknown backend")
         providers = tuple(PROVIDERS if providers is None else providers)
         require(
             bool(providers)
@@ -157,13 +173,16 @@ class SimilarityManager:
             "invalid_params",
             "timeout_ms must be 1–600000",
         )
-        capabilities = self.backend.capabilities()
-        missing = [p for p in providers if not capabilities["providers"].get(p, False)]
-        require(
-            not missing,
-            "similarity_unavailable",
-            "BN6 Ultimate and the requested providers are required: " + ", ".join(missing),
-        )
+        if hasattr(self.backend, "select"):
+            backend_name, adapter, providers = self.backend.select(backend, requested)
+        else:
+            backend_name, adapter = "native", self.backend
+            capabilities = adapter.capabilities()
+            require(
+                backend != "external" and all(capabilities["providers"].get(p) for p in providers),
+                "similarity_unavailable",
+                "BN6 Ultimate and the requested providers are required: " + ", ".join(providers),
+            )
         with self._lock:
             require(
                 self._accepting and not self._shutdown.is_set(), "stopping", "listener is stopping"
@@ -179,6 +198,7 @@ class SimilarityManager:
                 "close a retained comparison first (limit 4)",
             )
             job = Comparison(reference_binary_id, target_binary_id, providers, timeout_ms)
+            job.backend_name, job.adapter = backend_name, adapter
             job.deadline = time.monotonic() + timeout_ms / 1000
             self._jobs[job.id] = job
             job.thread = threading.Thread(
@@ -204,7 +224,7 @@ class SimilarityManager:
     def _run(self, job):
         run = None
         try:
-            run = self.backend.prepare(
+            run = job.adapter.prepare(
                 job.reference, job.target, job.providers, lambda: self._check(job)
             )
             with self._lock:
@@ -227,9 +247,16 @@ class SimilarityManager:
                         job.phase = "stopping"
                 with self._lock:
                     job.progress = run.progress
+                    job.stage = getattr(run, "stage", "matching")
                 time.sleep(0.05)
             # No native objects are released while a provider can still use them.
             if not self._shutdown.is_set():
+                with self._lock:
+                    job.stage = (
+                        getattr(run, "stage", "matching")
+                        if getattr(run, "error", None)
+                        else "importing"
+                    )
                 for record in run.records():
                     with self._lock:
                         if job.closing:
@@ -237,12 +264,14 @@ class SimilarityManager:
                         if len(job.records) == MAX_RESULTS:
                             job.error = {"code": "result_limit", "message": "result limit reached"}
                             break
-                        job.records.append(record)
+                        job.records.append({**record, "backend": job.backend_name})
                 else:
                     with self._lock:
                         job.incomplete = job.reason is not None
                 with self._lock:
                     job.unresolved = run.unresolved
+                    job.omitted = getattr(run, "omitted", {})
+                    job.incomplete |= any(job.omitted.values())
                     job.incomplete |= job.unresolved > 0
                     job.unmatched = run.unmatched(job.records)
                 try:
@@ -280,6 +309,9 @@ class SimilarityManager:
                             job.error = {"code": "cleanup_pending", "message": type(error).__name__}
                         time.sleep(0.05)
             with self._lock:
+                if run is not None:
+                    job.omitted = getattr(run, "omitted", {})
+                    job.unresolved = run.unresolved
                 if job.error and job.phase == "stopping":
                     job.phase = job.reason or "failed"
                 job.incomplete |= job.reason is not None or job.error is not None or job.stale
@@ -397,7 +429,7 @@ class SimilarityManager:
             )
             record, snapshots = copy.deepcopy(record), copy.deepcopy(job.snapshots)
         try:
-            instructions, truncated = self.backend.instructions(record, snapshots)
+            instructions, truncated = job.adapter.instructions(record, snapshots)
         except SimilarityError as error:
             if error.code == "stale":
                 with self._lock:

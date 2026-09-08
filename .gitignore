@@ -7,3 +7,6 @@ build/
 dist/
 *.egg-info/
 .DS_Store
+
+# Optional helper build outputs
+binja_windbg_mcp/native/

@@ -70,7 +70,7 @@ def make_server(workspace, profiles):
             "here. Native active-view selection is shared across clients. This server uses "
             "the Binary Ninja API directly with explicit binary IDs, never the native active "
             "view. File paths describe files; debugger mapping requires PE identity and RVA."
-            " Optional similarity tools require BN6 Ultimate and compare two open PE views. "
+            " Similarity compares open PE views using external BinDiff or BN6 Ultimate providers. "
             "Matches retain each build's identity; scores are provider-specific integers 0–255. "
             "Disassembly differences are textual, not proof of semantic equivalence. Pass a "
             "result's generation to navigate as expected_generation before investigating it."
@@ -80,6 +80,11 @@ def make_server(workspace, profiles):
     if not hasattr(workspace, "similarity"):
         workspace.similarity = SimilarityManager(workspace)
     similarity = workspace.similarity
+    if hasattr(similarity.backend, "configure"):
+        try:
+            similarity.backend.configure(getattr(profiles, "bindiff_path", None))
+        except ValueError as error:
+            similarity.backend.configure(None, error=str(error))
     selected = selected_tools(profiles.groups)
 
     def tool(group):
@@ -251,10 +256,11 @@ def make_server(workspace, profiles):
         target_binary_id: str,
         providers: list[Literal["Google BinDiff", "WARP"]] | None = None,
         timeout_ms: int = 120000,
+        backend: Literal["auto", "native", "external"] = "auto",
     ) -> dict[str, object]:
-        """Start a read-only comparison of two analyzed, same-architecture PE views (Ultimate)."""
+        """Compare two analyzed PE views using external BinDiff or native Ultimate providers."""
         return await comparison_call(
-            similarity.start, reference_binary_id, target_binary_id, providers, timeout_ms
+            similarity.start, reference_binary_id, target_binary_id, providers, timeout_ms, backend
         )
 
     @tool("similarity")

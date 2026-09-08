@@ -94,8 +94,7 @@ class NativeSimilarity:
             )
         return key, view, active
 
-    def prepare(self, reference, target, providers, check):
-        bn = self.bn()
+    def capture(self, reference, target, check):
         views, keys, snapshots, functions = {}, {}, {}, {}
         for side, binary_id in zip(SIDES, (reference, target)):
             check()
@@ -131,6 +130,11 @@ class NativeSimilarity:
             "architecture_mismatch",
             "comparison requires the same architecture",
         )
+        return views, keys, snapshots, functions
+
+    def prepare(self, reference, target, providers, check):
+        bn = self.bn()
+        views, keys, snapshots, functions = self.capture(reference, target, check)
         session = bn.SimilaritySession()
         instances = {name: create_provider(bn, name) for name in providers}
         for provider in instances.values():

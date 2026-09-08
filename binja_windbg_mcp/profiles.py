@@ -49,6 +49,18 @@ class Profiles:
     def groups(self):
         return self._data.get("groups", "all")
 
+    @property
+    def bindiff_path(self):
+        settings = self._data.get("similarity", {})
+        if not isinstance(settings, dict):
+            raise ValueError("similarity configuration must be an object")
+        value = settings.get("bindiff_path")
+        if value is not None and (
+            not isinstance(value, str) or not value or not Path(value).expanduser().is_absolute()
+        ):
+            raise ValueError("similarity.bindiff_path must be an absolute executable path")
+        return value
+
     def profile(self, name: str) -> tuple[str, str]:
         value = self._data.get("windbg", {}).get(name)
         if not value:
