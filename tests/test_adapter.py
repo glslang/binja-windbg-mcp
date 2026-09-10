@@ -72,6 +72,33 @@ def test_cache_invalidation_discards_immutable_results():
     assert workspace._cache == {}
 
 
+def test_data_metadata_notification_invalidates_cache_generation_and_comparison(monkeypatch):
+    import sys
+
+    from binja_windbg_mcp.similarity import Comparison
+
+    monkeypatch.setitem(sys.modules, "binaryninja", N(BinaryDataNotification=object))
+    workspace = Workspace()
+    key = (1, "PE")
+    workspace._ids[key] = "binary"
+    workspace._revision[key] = 5
+    workspace._cache["old"] = {"comment": "before"}
+    job = Comparison("binary", "other", ("Google BinDiff",), 120000)
+    job.keys = (key,)
+    workspace.similarity._jobs[job.id] = job
+
+    class View:
+        def register_notification(self, event):
+            self.event = event
+
+    view = View()
+    workspace._observe(key, view)
+    view.event.data_metadata_updated(view, 0x1000)
+    assert workspace._revision[key] == 6
+    assert workspace._cache == {}
+    assert job.stale and job.cancel.is_set() and job.reason == "stale"
+
+
 def test_duplicate_views_need_a_selected_binary_and_closed_views_are_refused(monkeypatch):
     import pytest
 

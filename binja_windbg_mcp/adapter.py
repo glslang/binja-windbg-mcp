@@ -178,6 +178,9 @@ class Workspace:
             def data_removed(self, *args):
                 owner.invalidate(key)
 
+            def data_metadata_updated(self, *args):
+                owner.invalidate(key)
+
             def function_updated(self, *args):
                 owner.invalidate(key)
 
