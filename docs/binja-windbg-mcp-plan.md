@@ -14,9 +14,10 @@ V1 supports driver analysis, navigation, and evidence capture. Breakpoint instal
 
 The optional [BN6 similarity extension](similarity.md) adds six tools for comparing
 two open PE builds using external BinDiff on Personal or native providers on Ultimate.
-It preserves the WinDbg coordinate guards. Real Personal GUI comparisons passed;
-Ultimate and live similarity-to-WinDbg acceptance remain pending; the original
-16-tool surface below describes the previously validated companion baseline.
+It preserves the WinDbg coordinate guards. Real Personal GUI comparisons, lifecycle
+checks, and [live similarity-to-WinDbg acceptance](binja-windbg-mcp-validation.md#personal-windbg-handoff-acceptance--2026-09-11)
+passed. Ultimate remains tentative. The original 16-tool surface below describes
+the previously validated companion baseline.
 
 The [installed Binary Ninja 6 test drive](binja6-native-mcp-test-drive.md) established the
 scope split. The host connects independently to native Binary Ninja MCP for general analysis

@@ -6,8 +6,11 @@ Ultimate also supports the native Google BinDiff and WARP providers.
 
 Real GUI comparisons passed on BN 6.0.10601 Personal with the helper and BinDiff 8:
 identical and relocated fixtures each produced two matches; the changed fixture
-produced two matches and one unmatched target function. Native Ultimate and the
-live WinDbg handoff remain separate acceptance checks.
+produced two matches and one unmatched target function. A subsequent live ARM64
+fixture passed the guarded WinDbg handoff described below. Native Ultimate remains
+tentative. Personal lifecycle checks
+now also cover cancellation, edits, rebase, view closure, listener restart and
+normal quit; see the [lifecycle validation](binja-windbg-mcp-validation.md#personal-lifecycle-acceptance--2026-09-11).
 
 ## Personal setup
 
@@ -208,3 +211,12 @@ adds no Rust tools or worker calls.
 - [BN6 announcement](https://binary.ninja/2026/09/03/binary-ninja-6.0-krypton.html#binary-similarity)
 - [Binary Similarity guide](https://docs.binary.ninja/guide/similarity.html)
 - [Similarity Python API](https://api.binary.ninja/binaryninja.similarity-module.html)
+
+## Live debugger handoff acceptance
+
+The [2026-09-11 ARM64 fixture capture](https://github.com/glslang/windbg-mcp/blob/main/docs/similarity-windbg-acceptance.md)
+passed comparison → target navigation → runtime-byte comparison, run-to, and
+breakpoint through the existing guarded WinDbg tools. All three actions refused
+the reference build's identity. The disposable session and GUI shut down cleanly.
+This validates the generic Personal workflow; native Ultimate execution remains
+tentative.
