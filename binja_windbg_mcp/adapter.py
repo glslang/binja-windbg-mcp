@@ -97,7 +97,12 @@ class Workspace:
         owner = self
 
         class Lifecycle(UIContextNotification):
-            def OnAfterCloseFile(self, *args):
+            def OnAfterCloseFile(self, context, file, frame):
+                # BN still lists this file as open while delivering this notification.
+                sessions = {view.file.session_id for view in file.getAllDataViews()}
+                for key in list(owner._ids):
+                    if key[0] in sessions:
+                        owner.invalidate(key)
                 owner._views()
 
             def OnDataViewReplaced(self, *args):

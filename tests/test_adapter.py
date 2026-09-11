@@ -117,6 +117,48 @@ def test_duplicate_views_need_a_selected_binary_and_closed_views_are_refused(mon
         workspace.acquire("two")
 
 
+def test_close_notification_invalidates_before_file_registry_removal(monkeypatch):
+    import sys
+
+    from binja_windbg_mcp import adapter
+    from binja_windbg_mcp.similarity import Comparison
+
+    closing_view = N(view_type="PE", file=N(session_id=1))
+    other_view = N(view_type="PE", file=N(session_id=2))
+    closing_file = N(getAllDataViews=lambda: [closing_view])
+    registry = [closing_file, N(getAllDataViews=lambda: [other_view])]
+    monkeypatch.setitem(
+        sys.modules,
+        "binaryninjaui",
+        N(
+            UIContext=N(registerNotification=lambda event: None),
+            UIContextNotification=object,
+            FileContext=N(getOpenFileContexts=lambda: registry),
+        ),
+    )
+    monkeypatch.setattr(adapter, "current_frame", lambda: None)
+    workspace = Workspace()
+    monkeypatch.setattr(workspace, "_observe", lambda key, view: None)
+    workspace._ids = {(1, "PE"): "closing", (2, "PE"): "other"}
+    workspace._revision = {(1, "PE"): 3, (2, "PE"): 7}
+    workspace._cache["old"] = {"value": 1}
+    affected = Comparison("closing", "other", ("Google BinDiff",), 120000)
+    affected.keys = ((1, "PE"), (2, "PE"))
+    unrelated = Comparison("other", "third", ("Google BinDiff",), 120000)
+    unrelated.keys = ((2, "PE"), (3, "PE"))
+    workspace.similarity._jobs = {job.id: job for job in (affected, unrelated)}
+
+    workspace.attach_ui_notifications()
+    workspace._ui_notification.OnAfterCloseFile(None, closing_file, None)
+
+    assert closing_file in registry
+    assert workspace._ids[(1, "PE")] == "closing"
+    assert workspace._revision == {(1, "PE"): 4, (2, "PE"): 7}
+    assert workspace._cache == {}
+    assert affected.stale and affected.cancel.is_set() and affected.reason == "stale"
+    assert not unrelated.cancel.is_set() and unrelated.reason is None
+
+
 def test_analysis_wait_cancellation_releases_subscription(monkeypatch):
     import asyncio
 

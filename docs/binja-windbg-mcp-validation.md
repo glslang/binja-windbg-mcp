@@ -245,6 +245,48 @@ compatibility adjustment required by its pinned Abseil. This temporary CLI was n
 installed or bundled. It does not establish compatibility with every BinDiff build.
 
 Personal and native Ultimate capabilities are reported separately. Ultimate remains
-unavailable on this installation. The live similarity-to-WinDbg operation remains
-pending; existing identity-guard unit coverage and prior driver acceptance do not
-substitute for that new live handoff.
+unavailable on this installation. The live similarity-to-WinDbg operation subsequently passed on a disposable ARM64
+fixture; see the handoff acceptance below.
+
+## Personal lifecycle acceptance — 2026-09-11
+
+Real GUI acceptance now covers cancellation during export/matching, active comparison
+closure, comment-edit invalidation, rebase, actual target-tab closure, listener
+restart, and application quit during export/matching. The
+[lifecycle record](https://github.com/glslang/windbg-mcp/blob/main/docs/similarity-lifecycle-acceptance.md)
+contains the observations and captures.
+
+The final close-view test exposed BN's event ordering: `OnAfterCloseFile` fires
+before the closing file disappears from the open-file registry. The callback now
+invalidates that file's tracked sessions immediately. The corrected run stopped
+the comparison as stale and refused navigation to the closed target. A regression
+test reproduced the original failure; all 181 companion tests and Ruff pass.
+
+Rebase changed the actual target base and refused old-generation navigation without
+moving selection. Listener restart terminated/reaped an active BinDiff process,
+closed the old port, served authenticated MCP requests on a new listener thread,
+and ran another comparison. Each final GUI run exited normally after cleanup.
+Disposable profiles suppressed the first-run wizard to avoid the independently
+confirmed [BN startup-quit bug](https://github.com/Vector35/binaryninja-api/issues/8549).
+
+The restarted securekernel comparison retained its known eight unresolved rows;
+full exporter coverage remains a separate follow-up. Guarded WinDbg handoff passed
+in the subsequent fixture capture below. Ultimate acceptance remains tentative and
+does not gate Personal delivery.
+
+## Personal WinDbg handoff acceptance — 2026-09-11
+
+Two benign ARM64 builds passed real GUI export and external BinDiff with three
+matches and complete coverage. Through authenticated MCP, navigation to a target
+match fed the existing pairing and guarded debugger tools: all 16 runtime bytes
+matched, run-to stopped at the chosen function, and a breakpoint hit a second
+matched function. The reference build's identity was refused by read, breakpoint,
+and run-to operations. ASLR changed the runtime base; target RVAs still resolved
+correctly.
+
+The owned process/session and SSH tunnel were closed, the session inventory was
+restored, and BN exited normally with no listener thread left. No product changes
+were required. The [handoff record and capture](https://github.com/glslang/windbg-mcp/blob/main/docs/similarity-windbg-acceptance.md)
+include identities, tool responses, source hashes, and a corrected probe assertion.
+This closes generic Personal handoff acceptance. It does not establish live
+securekernel/CVE execution or resolve that component's eight omitted rows.
