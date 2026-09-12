@@ -14,6 +14,9 @@ def main():
     )
     parser.add_argument("--cmake", default="cmake")
     parser.add_argument("--jobs", type=int, default=4)
+    parser.add_argument(
+        "--deployment-target", default="13.0", help="Minimum macOS version (default: 13.0)"
+    )
     parser.add_argument("--package", action="store_true")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
@@ -25,6 +28,7 @@ def main():
         "-B",
         str(build),
         "-DCMAKE_BUILD_TYPE=Release",
+        f"-DCMAKE_OSX_DEPLOYMENT_TARGET={args.deployment_target}",
         f"-DBN_INSTALL_DIR={args.bn_install.resolve()}",
         f"-DCMAKE_INSTALL_PREFIX={root}",
     ]

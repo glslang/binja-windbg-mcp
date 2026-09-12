@@ -28,6 +28,10 @@ installed helper and dependency licenses go into `binja_windbg_mcp/native/`.
 `--package` creates `dist/binexport-bn6-abi187-macos-arm64.zip`, ready to extract into
 a companion checkout. Generated binaries are not committed. Restart BN after
 replacing an already loaded helper. BinDiff itself remains user-installed.
+The build script explicitly targets macOS 13.0, matching the pinned BN6 core's
+minimum OS, instead of inheriting the build host's version. Use
+`--deployment-target` only when deliberately changing that requirement and record
+the resulting Mach-O minimum OS with the release artifact.
 
 The C ABI consists of `BNMCPExportABI`, `BNMCPCoreABI`, `BNMCPExportView`, and
 `BNMCPFree`. Export ABI 1 takes a borrowed `BNBinaryView*`, UTF-8 destination and
@@ -50,6 +54,6 @@ then exports a four-byte fallthrough instruction named `clrbhb`. Other decode
 failures retain the upstream omission behavior. This recovers flow-graph evidence;
 it does not add instructions or IL to Binary Ninja's function analysis.
 
-The install step includes SDK, BinExport, fmt, Abseil, Protobuf, utf8_range and Boost
-license texts.
+The install step includes the companion's MIT license and SDK, BinExport, fmt,
+Abseil, Protobuf, utf8_range and Boost license texts.
 No Binary Ninja core library is copied or distributed with the helper.

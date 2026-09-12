@@ -9,7 +9,9 @@ The optional [binary similarity tools](docs/similarity.md) compare two open PE b
 using external BinDiff on Personal or native BinDiff/WARP on Ultimate, and return
 agent-readable disassembly differences. Personal requires the optional export helper
 and a user-installed BinDiff CLI; see the setup guide. Real Personal comparisons
-passed; Ultimate execution and live WinDbg handoff acceptance remain pending.
+passed, including lifecycle checks and live guarded WinDbg handoff on ARM64 fixtures.
+Ultimate execution remains tentative because of cost and does not gate Personal delivery.
+See [release preparation](docs/release.md) for building and checking the optional helper.
 
 Driver analysis works without WinDbg. The companion reads Binary Ninja's structured IL
 through its Python API; native MCP currently renders IL as text. It selects views by its
