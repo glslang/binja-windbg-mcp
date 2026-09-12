@@ -35,6 +35,8 @@ target_link_options(binja_binexport PRIVATE
   "LINKER:-exported_symbol,_BNMCPExportView"
   "LINKER:-exported_symbol,_BNMCPFree")
 install(TARGETS binja_binexport LIBRARY DESTINATION binja_windbg_mcp/native)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../../LICENSE"
+  DESTINATION binja_windbg_mcp/native/licenses RENAME companion.txt)
 install(FILES "${bnapi_SOURCE_DIR}/LICENSE.txt" DESTINATION binja_windbg_mcp/native/licenses RENAME binaryninja.txt)
 install(FILES "${bnapi_SOURCE_DIR}/vendor/binexport/LICENSE" DESTINATION binja_windbg_mcp/native/licenses RENAME binexport.txt)
 install(FILES "${bnapi_SOURCE_DIR}/vendor/fmt/LICENSE" DESTINATION binja_windbg_mcp/native/licenses RENAME fmt.txt)

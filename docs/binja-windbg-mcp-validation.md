@@ -26,7 +26,9 @@ that process. No user binary or database was opened or edited by this probe.
 
 `tools/similarity_capture.py` is the opt-in authenticated MCP capture runner. Native
 Ultimate runs and captures, application quit with a native comparison active, and
-the live similarity-to-debugger workflow are pending release gates. Existing
+the live similarity-to-debugger workflow were pending at this 2026-09-07 snapshot.
+The later Personal lifecycle and handoff records below close the Personal gates;
+Ultimate remains tentative due to cost and does not gate Personal delivery. Existing
 HEVD/mountmgr results below remain evidence for the prior companion functionality;
 they are not similarity acceptance results. No Rust source changed.
 

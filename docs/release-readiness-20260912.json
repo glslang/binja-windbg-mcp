@@ -1,0 +1,44 @@
+{
+  "date": "2026-09-12",
+  "publication": "not_requested_no_release_or_tag_created",
+  "native_source_commit": "ce3a5db4ee430b4e2563f7905851abe4f29ba76a",
+  "plugin_version": "0.2.0",
+  "archive": "binexport-bn6-abi187-macos-arm64.zip",
+  "archive_sha256": "af1a89c670993e3770e5cc8e5ae5634e0c1a05a61e6b30192ee6aa511147496d",
+  "dylib_sha256": "1e59816e7f5f8800b43050ba5302cbaeef83a636a9e0d35a8bac4d7e32c74bda",
+  "architecture": "arm64",
+  "minimum_macos": "13.0",
+  "host_macos": "26.6.2",
+  "cmake": "4.4.3",
+  "abis": {
+    "export": 1,
+    "core": 187
+  },
+  "files": [
+    "binja_windbg_mcp/native/libbinja_binexport.dylib",
+    "binja_windbg_mcp/native/licenses/BOOST_LICENSE_1_0.txt",
+    "binja_windbg_mcp/native/licenses/abseil.txt",
+    "binja_windbg_mcp/native/licenses/binaryninja.txt",
+    "binja_windbg_mcp/native/licenses/binexport.txt",
+    "binja_windbg_mcp/native/licenses/companion.txt",
+    "binja_windbg_mcp/native/licenses/fmt.txt",
+    "binja_windbg_mcp/native/licenses/protobuf.txt",
+    "binja_windbg_mcp/native/licenses/utf8_range.txt"
+  ],
+  "dynamic_dependencies": [
+    "@rpath/libbinja_binexport.dylib (compatibility version 0.0.0, current version 0.0.0)",
+    "@rpath/libbinaryninjacore.1.dylib (compatibility version 1.0.0, current version 0.0.0)",
+    "/System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices (compatibility version 1.0.0, current version 1226.0.0)",
+    "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (compatibility version 150.0.0, current version 5026.5.4)",
+    "/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2100.43.0)",
+    "/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1356.0.0)"
+  ],
+  "tests": {
+    "pytest_passed": 187,
+    "native_ctest_passed": 1,
+    "ruff": "passed",
+    "format": "40 files passed",
+    "markdownlint": "9 files passed"
+  },
+  "runtime_scope": "ABI-only load with BN core preloaded; no BinaryView export or GUI capture in this pass; macOS 13 runtime not exercised"
+}
