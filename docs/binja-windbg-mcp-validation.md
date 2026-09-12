@@ -269,9 +269,9 @@ and ran another comparison. Each final GUI run exited normally after cleanup.
 Disposable profiles suppressed the first-run wizard to avoid the independently
 confirmed [BN startup-quit bug](https://github.com/Vector35/binaryninja-api/issues/8549).
 
-The restarted securekernel comparison retained its known eight unresolved rows;
-full exporter coverage remains a separate follow-up. Guarded WinDbg handoff passed
-in the subsequent fixture capture below. Ultimate acceptance remains tentative and
+The restarted securekernel comparison retained its known eight unresolved rows.
+The subsequent exporter follow-up below resolved them without changing the import
+guards. Guarded WinDbg handoff passed in the subsequent fixture capture below. Ultimate acceptance remains tentative and
 does not gate Personal delivery.
 
 ## Personal WinDbg handoff acceptance — 2026-09-11
@@ -289,4 +289,29 @@ restored, and BN exited normally with no listener thread left. No product change
 were required. The [handoff record and capture](https://github.com/glslang/windbg-mcp/blob/main/docs/similarity-windbg-acceptance.md)
 include identities, tool responses, source hashes, and a corrected probe assertion.
 This closes generic Personal handoff acceptance. It does not establish live
-securekernel/CVE execution or resolve that component's eight omitted rows.
+securekernel/CVE execution. The component's eight omitted rows were resolved
+separately in the exporter follow-up below.
+
+## Securekernel ARM64 export coverage — 2026-09-11
+
+The eight omitted functions per side were four-byte `CLRBHB` entries. BN 6.0.10601
+Personal listed their basic blocks but could not decode their instructions, so the
+upstream processor discarded their empty graphs. BinDiff matched address nodes;
+the companion correctly retained those matches as unresolved.
+
+The local processor now recognizes only the exact aligned AArch64 `CLRBHB` encoding
+when BN rejects it, and exports its actual four bytes as a fallthrough instruction.
+Wrong architectures, unaligned addresses, truncated input and other encodings do
+not use the fallback. The graph-coverage and Python import guards are unchanged.
+
+The full GUI recapture passed with 3,117 imported matches, zero omitted functions
+and zero unresolved rows. Unmatched counts remained 3 reference / 26 target.
+Names, types, comments, function inventory, mapped bytes, identities, hashes and
+generations stayed unchanged; target navigation passed, and BN exited 0 normally.
+The [follow-up record](https://github.com/glslang/windbg-mcp/blob/main/docs/securekernel-export-followup.md)
+links the complete comparison and per-function diagnosis.
+
+Coverage is complete for the captured BN inventory. This does not repair BN's own
+decoder or extend its four-byte function boundaries: `similarity_diff` can still
+return no instruction-text rows for those entries. It does not establish semantic
+equivalence, CVE attribution, live securekernel execution, or native Ultimate support.

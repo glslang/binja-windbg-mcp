@@ -1,4 +1,5 @@
-// The processor is compiled unchanged from the pinned MIT-licensed BN6 SDK.
+// The processor is based on the pinned MIT-licensed BN6 SDK and carries the
+// narrowly scoped CLRBHB compatibility fallback documented in this directory.
 #include "processor.h"
 #include "third_party/zynamics/binexport/binexport2.pb.h"
 #include "json/json.h"
