@@ -1,5 +1,7 @@
 from types import SimpleNamespace as N
 
+import pytest
+
 from binja_windbg_mcp.adapter import Workspace, _capture_function, _field_path
 from binja_windbg_mcp.core import Budget
 
@@ -157,6 +159,85 @@ def test_close_notification_invalidates_before_file_registry_removal(monkeypatch
     assert workspace._cache == {}
     assert affected.stale and affected.cancel.is_set() and affected.reason == "stale"
     assert not unrelated.cancel.is_set() and unrelated.reason is None
+
+
+@pytest.mark.parametrize("closing_session", [1, 2, 3])
+@pytest.mark.parametrize("notified", [True, False])
+def test_close_notification_during_preparation_uses_binary_ownership(
+    monkeypatch, closing_session, notified
+):
+    import sys
+    import threading
+    from unittest.mock import Mock
+
+    from binja_windbg_mcp import adapter
+
+    views = [N(view_type="PE", file=N(session_id=i)) for i in (1, 2, 3)]
+    files = [N(getAllDataViews=lambda view=view: [view]) for view in views]
+    monkeypatch.setitem(
+        sys.modules,
+        "binaryninjaui",
+        N(
+            UIContext=N(registerNotification=lambda event: None),
+            UIContextNotification=object,
+            FileContext=N(getOpenFileContexts=lambda: files),
+        ),
+    )
+    monkeypatch.setattr(adapter, "current_frame", lambda: None)
+    workspace = Workspace()
+    monkeypatch.setattr(workspace, "_observe", lambda key, view: None)
+    workspace._ids = {(1, "PE"): "reference", (2, "PE"): "target", (3, "PE"): "other"}
+    workspace._revision = dict.fromkeys(workspace._ids, 0)
+    entered, resume = threading.Event(), threading.Event()
+    run = N(
+        keys=((1, "PE"), (2, "PE")),
+        snapshots={},
+        validate=Mock(),
+        start=Mock(),
+        finished=True,
+        progress=1,
+        records=lambda: iter(()),
+        unmatched=lambda records: {"reference": [], "target": []},
+        finish=Mock(),
+        unresolved=0,
+    )
+
+    def prepare(*args):
+        entered.set()
+        assert resume.wait(2)
+        # A late snapshot incorporates the close's generation change, hiding it
+        # from snapshot validation. Ownership must stop the preparing job instead.
+        run.snapshots = {"generation_after_close": workspace._revision[(closing_session, "PE")]}
+        return run
+
+    workspace.similarity.backend = N(
+        capabilities=lambda: {"providers": {"Google BinDiff": True}}, prepare=prepare
+    )
+    workspace.attach_ui_notifications()
+    manager = workspace.similarity
+    job_id = manager.start("reference", "target", providers=["Google BinDiff"])["comparison_id"]
+    try:
+        assert entered.wait(2)
+        assert manager._jobs[job_id].keys == ()
+        if notified:
+            workspace._ui_notification.OnAfterCloseFile(None, files[closing_session - 1], None)
+            assert len(files) == 3  # BN has not removed the closing file yet.
+        else:
+            files.pop(closing_session - 1)
+            workspace._views()
+    finally:
+        resume.set()
+        manager.join(2)
+    result = manager.status(job_id)
+    assert not result["active"]
+    run.finish.assert_called_once()
+    if closing_session in (1, 2):
+        assert result["state"] == "stale" and result["stop_reason"] == "stale"
+        assert not result["coverage_complete"]
+        run.start.assert_not_called()
+    else:
+        assert result["state"] == "completed" and result["stop_reason"] is None
+        run.start.assert_called_once()
 
 
 def test_analysis_wait_cancellation_releases_subscription(monkeypatch):

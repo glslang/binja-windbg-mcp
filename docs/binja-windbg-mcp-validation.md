@@ -315,3 +315,18 @@ Coverage is complete for the captured BN inventory. This does not repair BN's ow
 decoder or extend its four-byte function boundaries: `similarity_diff` can still
 return no instruction-text rows for those entries. It does not establish semantic
 equivalence, CVE attribution, live securekernel execution, or native Ultimate support.
+
+## Preparation-race review follow-up — 2026-09-12
+
+View invalidation now also matches a comparison's reference/target binary IDs,
+which exist before preparation publishes its view keys. Registry removal retains
+that ID until invalidation completes. This stops a closing input even when a late
+snapshot incorporates the close's generation change.
+
+Six deterministic cases cover reference, target and unrelated view closure during
+preparation, through both the UI notification and registry polling. Affected jobs
+become stale, release preparation resources and never start the provider; unrelated
+jobs still complete. Reverting the binary-ID check fails four cases; reverting the
+registry-removal ordering fails the two affected polling cases. All 187 companion
+tests and Ruff pass. These race tests are offline; the earlier GUI captures retain
+their original source hashes and results.
