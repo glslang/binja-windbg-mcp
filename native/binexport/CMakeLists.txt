@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.25)
 project(binja_binexport LANGUAGES C CXX)
+include(CTest)
 if(NOT APPLE OR NOT CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
   message(FATAL_ERROR "The export helper currently targets Apple Silicon macOS")
 endif()
@@ -20,11 +21,14 @@ set(BINEXPORT_BUILD_TESTING OFF CACHE BOOL "" FORCE)
 set(BINEXPORT_ENABLE_IDAPRO OFF CACHE BOOL "" FORCE)
 set(BINEXPORT_ENABLE_BINARYNINJA OFF CACHE BOOL "" FORCE)
 add_subdirectory("${bnapi_SOURCE_DIR}/vendor/binexport" binexport EXCLUDE_FROM_ALL)
-add_library(binja_binexport SHARED helper.cpp
-  "${bnapi_SOURCE_DIR}/plugins/bindiff_similarity/processor.cpp")
+add_library(binja_binexport SHARED helper.cpp processor.cpp)
 target_include_directories(binja_binexport PRIVATE
   "${bnapi_SOURCE_DIR}/plugins/bindiff_similarity")
 target_link_libraries(binja_binexport PRIVATE binaryninjaapi binexport_core)
+if(BUILD_TESTING)
+  add_executable(binja_binexport_clrbhb_test clrbhb_test.cpp)
+  add_test(NAME binja_binexport_clrbhb COMMAND binja_binexport_clrbhb_test)
+endif()
 target_link_options(binja_binexport PRIVATE
   "LINKER:-exported_symbol,_BNMCPExportABI"
   "LINKER:-exported_symbol,_BNMCPCoreABI"

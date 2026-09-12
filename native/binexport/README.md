@@ -1,10 +1,11 @@
 # Personal BinExport helper
 
-This optional shared library exports an existing BinaryView inside the BN GUI. It
-compiles `processor.cpp` unchanged from the MIT-licensed Binary Ninja SDK and links
-its pinned open-source BinExport dependencies. It registers no commands, similarity
-providers, or resolvers. The Python boundary loads it lazily and rejects a different
-core ABI before passing any view to the exporter.
+This optional shared library exports an existing BinaryView inside the BN GUI. Its
+`processor.cpp` is based on the MIT-licensed processor from the pinned Binary Ninja
+SDK and links its pinned open-source BinExport dependencies. It registers no
+commands, similarity providers, or resolvers. The Python boundary loads it lazily
+and rejects a different core ABI before passing any view to the exporter. The exact
+upstream license is retained in `BINARYNINJA_LICENSE.txt`.
 
 Pinned inputs:
 
@@ -42,6 +43,12 @@ primary/secondary slot. This ID is **not an original-file hash**. Python separat
 hashes export bytes and captures the existing PE identity/original hash. Functions
 without exported flow graphs are reported as omitted. Cancellation is checked
 between functions and at processor progress callbacks; ownership lasts until return.
+
+The pinned BN6 AArch64 decoder does not recognize CLRBHB (`HINT #22`). The local
+processor recognizes only its exact aligned four-byte encoding after BN rejects it,
+then exports a four-byte fallthrough instruction named `clrbhb`. Other decode
+failures retain the upstream omission behavior. This recovers flow-graph evidence;
+it does not add instructions or IL to Binary Ninja's function analysis.
 
 The install step includes SDK, BinExport, fmt, Abseil, Protobuf, utf8_range and Boost
 license texts.

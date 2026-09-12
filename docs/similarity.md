@@ -220,3 +220,13 @@ breakpoint through the existing guarded WinDbg tools. All three actions refused
 the reference build's identity. The disposable session and GUI shut down cleanly.
 This validates the generic Personal workflow; native Ultimate execution remains
 tentative.
+
+## AArch64 CLRBHB compatibility
+
+Rebuild the native helper to include the narrow `CLRBHB` export fallback for BN
+6.0.10601. It preserves instruction-bearing graphs for the exact aligned encoding
+when BN's decoder rejects it. Other decode failures keep their existing omission
+behavior. The [securekernel capture](binja-windbg-mcp-validation.md#securekernel-arm64-export-coverage--2026-09-11)
+now has complete coverage of BN's function inventory, with no analysis changes.
+BN's own instruction-text decoder remains unchanged; an empty textual diff for
+these entries is not evidence of semantic equivalence.
