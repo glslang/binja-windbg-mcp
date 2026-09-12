@@ -1,5 +1,15 @@
 # Binary Ninja bridge validation
 
+## Current acceptance status — 2026-09-12
+
+Core HEVD/mountmgr bridge acceptance, Personal/external BinDiff comparison,
+lifecycle checks and generic guarded ARM64 WinDbg handoff are complete. The current
+surface has 22 tools. The dated sections below retain their original test counts
+and capture scope; the latest preparation-race follow-up records 187 passing tests.
+Native Ultimate remains tentative and does not gate Personal delivery. See the
+[plan status](binja-windbg-mcp-plan.md#status--2026-09-12) for the remaining investigations
+and deferred scope.
+
 ## Similarity implementation (2026-09-07)
 
 The companion adds six optional similarity tools, bringing the full surface to 22.
@@ -226,8 +236,9 @@ identified ARM64 HEVD/mountmgr builds in Binary Ninja 6.0.10601 Personal. These 
 not establish recovery for other builds, runtime execution of every static case, silo
 runtime behavior, force-quit cleanup, or other Windows security configurations. Partial
 security recovery and bounded sink traversal remain explicit supported outcomes.
-Structured `reachable_from_dispatch` remains follow-up #60; broader coverage import and
-report export remain deferred as specified in the [plan](binja-windbg-mcp-plan.md).
+Structured `reachable_from_dispatch` subsequently completed windbg-mcp item 60 on
+2026-09-10; broader coverage import and report export remain deferred as specified
+in the [plan](binja-windbg-mcp-plan.md).
 
 ## Personal similarity validation — 2026-09-08
 
@@ -332,3 +343,18 @@ jobs still complete. Reverting the binary-ID check fails four cases; reverting t
 registry-removal ordering fails the two affected polling cases. All 187 companion
 tests and Ruff pass. These race tests are offline; the earlier GUI captures retain
 their original source hashes and results.
+
+## Documentation audit and test rerun — 2026-09-12
+
+A fresh run against companion source `81f473e` passed **187 tests, no skips**,
+including the SDK HTTP/golden tests. It used a cached `uv` environment with Python
+3.13.15, pytest 9.1.1 and MCP SDK 2.1.1. All 28 runtime package versions matched
+`requirements.txt`. The repository `.venv` contained the runtime dependencies but
+no pytest; that environment alone could not run the tests. The
+[verification commands](../README.md#verification) now explicitly supply the
+development tools with `uv`.
+
+The first sandboxed run passed 181 tests; six HTTP tests failed because the sandbox
+refused loopback socket binding. Allowing those sockets produced the complete pass
+above. This rerun verifies the current Python suite; it does not replace or rerun
+the dated Binary Ninja GUI and Windows acceptance captures.
