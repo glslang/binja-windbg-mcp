@@ -363,10 +363,13 @@ class SimilarityManager:
                 if job.closing:
                     self._jobs.pop(job.id, None)
 
-    def invalidate(self, key):
+    def invalidate(self, key, binary_id=None):
         with self._lock:
             for job in self._jobs.values():
-                if key in job.keys:
+                # Binary ownership exists before prepare() can publish view keys.
+                if key in job.keys or (
+                    binary_id is not None and binary_id in (job.reference, job.target)
+                ):
                     self._stop(job, "stale")
                     job.incomplete = True
 

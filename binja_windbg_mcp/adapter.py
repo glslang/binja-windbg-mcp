@@ -117,7 +117,8 @@ class Workspace:
         with self._lock:
             self._revision[key] = self._revision.get(key, 0) + 1
             self._cache.clear()
-        self.similarity.invalidate(key)
+            binary_id = self._ids.get(key)
+        self.similarity.invalidate(key, binary_id)
 
     def _views(self):
         if self._closing.is_set():
@@ -152,8 +153,8 @@ class Workspace:
                 )
         with self._lock:
             for key in set(self._ids) - seen:
-                del self._ids[key]
                 self.invalidate(key)
+                del self._ids[key]
                 previous = self._notifications.pop(key, None)
                 if previous and previous[1]() is not None:
                     previous[1]().unregister_notification(previous[0])
