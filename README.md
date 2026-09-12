@@ -191,22 +191,27 @@ actions interrupted in flight report an uncertain outcome without retry.
 ## Verification
 
 ```console
-python3.13 -m pytest tests
-ruff check .
-ruff format --check .
+uv run --no-project --python 3.13 --with pytest --with ruff --with-requirements requirements.txt python -m pytest tests
+uv run --no-project --python 3.13 --with ruff ruff check .
+uv run --no-project --python 3.13 --with ruff ruff format --check .
 ```
 
 The official-SDK HTTP test binds a temporary loopback socket. Its tool golden is refreshed
 only with `UPDATE_GOLDEN=1`. Runtime versions are pinned in both requirements files; the
-development lock also verifies hashes. Pytest and ruff are test tools.
+development lock also verifies hashes. Pytest and Ruff are development tools, absent
+from the runtime requirements. The commands above supply them in a `uv` environment;
+a runtime-only `.venv` is not sufficient to run the suite. An existing Python 3.13
+test environment with these tools and the pinned runtime dependencies also works.
+The HTTP tests require permission to bind temporary loopback sockets.
 [Validation results and scope](docs/binja-windbg-mcp-validation.md) distinguish
 Python tests, the live native-server test drive, and companion UI/real-driver acceptance.
 The identified HEVD and mountmgr builds pass static and live bridge acceptance. UI
 lifecycle, paired shutdown, actual module replacement and connection failures were
 exercised against the installed application and Windows VM.
 
-The [implementation plan](docs/binja-windbg-mcp-plan.md) records the revised scope. Structured
-WinDbg dispatch reachability remains separate as windbg-mcp FOLLOWUPS.md item 60.
+The [implementation plan](docs/binja-windbg-mcp-plan.md) records completed acceptance
+and remaining scope. Structured WinDbg dispatch reachability completed windbg-mcp
+item 60 on 2026-09-10; coverage import and report export remain deferred.
 
 The [complete mountmgr acceptance](docs/mountmgr-e2e.md) records 24 recognized IOCTL codes,
 93 host/silo case records, standard-user runtime access, guarded live actions, real module

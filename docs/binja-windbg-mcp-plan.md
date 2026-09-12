@@ -1,8 +1,31 @@
 # Binary Ninja–WinDbg MCP Companion
 
+## Status — 2026-09-12
+
+Core V1 implementation and acceptance are complete for the identified ARM64 HEVD and
+mountmgr fixtures on Binary Ninja 6.0.10601 Personal. Personal/external BinDiff
+similarity, lifecycle checks and the generic guarded WinDbg handoff are also complete.
+The sections below retain the design contract and regression requirements; they are
+not a list of unfinished implementation tasks.
+
+| Deliverable | Recorded result |
+|---|---|
+| Official SDK, dependencies and UI lifecycle | Passed native dependency installation, authenticated HTTP, menus, analysis cancellation, invalidation and paired shutdown. See [bridge validation](binja-windbg-mcp-validation.md). |
+| WinDbg coordinates and structured memory | Implemented; Windows tests, enabled debugger smoke, guarded operations, surface goldens and result budgets passed. See [WinDbg verification](binja-windbg-mcp-validation.md#windbg-verification-2026-09-05). |
+| Driver analysis, evidence and pairing | HEVD and mountmgr static mappings, evidence undo, runtime access observations, focused actions, reconnect and module-replacement refusals passed. See [identified-driver acceptance](binja-windbg-mcp-validation.md#mountmgr-and-remaining-live-acceptance-2026-09-06). |
+| Personal similarity | GUI export/comparison, unchanged analysis, cancellation/edit/rebase/close/restart/quit and guarded debugger handoff passed. See [similarity acceptance](similarity.md). |
+| Structured dispatch reachability | Implemented on 2026-09-10; text is preserved alongside paths, branch recipes and worker-attributed image coordinates. See [completed item 60](https://github.com/glslang/windbg-mcp/blob/main/DONE.md#60-windbg-mcp-structured-dispatch-reachability-paths-for-the-binary-ninja-bridge--done-2026-09-10). |
+
+[Follow-ups 61–65](https://github.com/glslang/windbg-mcp/blob/main/FOLLOWUPS.md#61-windbg-mcp-attribute-the-cve-2026-83498-fix-independently-of-similarity-scores)
+track CVE-fix attribution, a live securekernel handoff, upstream CLRBHB decoding,
+the upstream first-run-wizard shutdown fix, and native Ultimate validation. They do
+not gate Personal delivery. Ultimate remains deferred due to cost; the generic
+ARM64 handoff does not establish a securekernel/CVE-specific handoff. Publication
+is separate from implementation acceptance and was not requested for this delivery.
+
 ## Summary
 
-Create `binja-windbg-mcp`, a macOS-first Binary Ninja Python UI plugin exposing authenticated Streamable HTTP MCP. Initial support targets Apple Silicon macOS, Binary Ninja 6.0 Personal, and its Python 3.13 environment.
+`binja-windbg-mcp` is a macOS-first Binary Ninja Python UI plugin exposing authenticated Streamable HTTP MCP. Initial support targets Apple Silicon macOS, Binary Ninja 6.0 Personal, and its Python 3.13 environment.
 
 Use the official [modelcontextprotocol/python-sdk](https://github.com/modelcontextprotocol/python-sdk), distributed as `mcp`, for both the server and outbound WinDbg client. Pin a tested v2 release and its dependencies. Use its protocol and transport implementation; exclude third-party MCP frameworks and bridge projects.
 
@@ -16,8 +39,8 @@ The optional [BN6 similarity extension](similarity.md) adds six tools for compar
 two open PE builds using external BinDiff on Personal or native providers on Ultimate.
 It preserves the WinDbg coordinate guards. Real Personal GUI comparisons, lifecycle
 checks, and [live similarity-to-WinDbg acceptance](binja-windbg-mcp-validation.md#personal-windbg-handoff-acceptance--2026-09-11)
-passed. Ultimate remains tentative. The original 16-tool surface below describes
-the previously validated companion baseline.
+passed. Ultimate remains tentative. The current 22-tool surface below includes
+the six similarity tools added to the original 16-tool baseline.
 
 The [installed Binary Ninja 6 test drive](binja6-native-mcp-test-drive.md) established the
 scope split. The host connects independently to native Binary Ninja MCP for general analysis
@@ -84,7 +107,7 @@ not stop the process-wide listener or end a debugger session.
 
 Generate a 32-byte bearer token. Validate HTTP host and origin information. Store credentials and named WinDbg profiles in a user-only `profiles.json` under Binary Ninja's per-user data directory, with macOS mode `0600`. Tokens never appear in tool arguments, logs, or BNDB metadata. WinDbg connections use loopback/tunneled HTTP or authenticated HTTPS, with certificate verification and no credential-bearing redirects.
 
-Expose 16 tools with startup-configured groups:
+Expose 22 tools with startup-configured groups:
 
 | Group | Tools |
 |---|---|
@@ -93,8 +116,9 @@ Expose 16 tools with startup-configured groups:
 | `evidence` | `add_evidence` |
 | `pair` | `pair_windbg`, `windbg_pair_status`, `unpair_windbg` |
 | `debug` | `set_breakpoint_here`, `run_to_here`, `compare_runtime_bytes` |
+| `similarity` | `similarity_start`, `similarity_status`, `similarity_results`, `similarity_diff`, `similarity_cancel`, `similarity_close` |
 
-All groups are enabled by default. `workspace` is always included; selecting `debug` also includes `pair`. Each tool belongs to exactly one group.
+The default `groups: "all"` enables every group, including `similarity`. An explicit group list enables `similarity` only when named. `workspace` is always included; selecting `debug` also includes `pair`. Each tool belongs to exactly one group.
 
 ### Workspace and analysis behavior
 
@@ -132,9 +156,9 @@ Evidence edits are explicit, undoable, and append to existing comments. Evidence
 
 ## Verification and delivery
 
-Deliver in this order: official-SDK/UI compatibility proof; coordinate and memory contracts; explicit PE workspace and structured driver analysis; evidence edits; direct pairing and focused actions. Keep the existing host-orchestrated workflow usable throughout.
+Completed core deliverables comprise: official-SDK/UI compatibility proof; coordinate and memory contracts; explicit PE workspace and structured driver analysis; evidence edits; direct pairing and focused actions. The host-orchestrated workflow remains supported.
 
-Verification must cover:
+The recorded acceptance above covers the following requirements. Retain them as regression gates for relevant future changes; dated captures establish only their documented builds and environments:
 
 - **WinDbg:** mapped/unmapped/failed-attribution locations, running-target refusals, memory boundaries and partial reads, batch compatibility, structured errors, group membership, both surface goldens, and result budgets. Test module replacement between pairing and action: guarded operations must refuse without applying changes.
 - **Binary Ninja core:** rebased coordinates, duplicate views, identity mismatch, CTL decoding, conditional sizes, compare chains, jump tables, unresolved KMDF dispatch, missing types, bounded sink paths, partial composite results, and cache invalidation.
@@ -143,6 +167,6 @@ Verification must cover:
 - **End-to-end validation:** rerun the HEVD and mountmgr workflows against identified builds. Verify HEVD's actual dispatch mapping rather than a published table. Establish a complete mountmgr fixture separately from its abbreviated walkthrough, and compare static security evidence with independently observed runtime access.
 - **Required checks:** formatting and documentation lint; Windows-target checks/clippy from macOS; Windows `cargo test` and the explicitly enabled debugger smoke tier. Manually validate on Binary Ninja 6 Personal and a Windows WinDbg VM.
 
-Keep structured `reachable_from_dispatch` output as a separate follow-up: preserve text, expose paths and branch recipes, and perform worker-side module attribution for coordinate-bearing addresses. Tracked as windbg-mcp FOLLOWUPS.md item 60.
+Structured `reachable_from_dispatch` shipped separately from the original bridge, completing windbg-mcp item 60 on 2026-09-10. It preserves text and exposes paths and branch recipes, with worker-side module attribution. Image identities are carried once in `images[]`; locations carry module names and RVAs. See [the coordinate contract](https://github.com/glslang/windbg-mcp/blob/main/docs/coordinates.md).
 
-Defer automatic binary acquisition, bulk runtime coverage import and report export. Any later coverage import must describe observed execution only; an unobserved location is not proof of unreachability.
+Automatic binary acquisition remains outside the plugin; the separate [MSRC patch-diff skill](https://github.com/glslang/windbg-mcp/blob/main/skills/msrc-patch-diff/SKILL.md) supplies the CVE-driven acquisition workflow. Bulk runtime coverage import and report export remain deferred. Any later coverage import must describe observed execution only; an unobserved location is not proof of unreachability.
