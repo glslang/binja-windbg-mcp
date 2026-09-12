@@ -346,8 +346,10 @@ their original source hashes and results.
 
 ## Documentation audit and test rerun — 2026-09-12
 
-A fresh run against companion source `81f473e` passed **187 tests, no skips**,
-including the SDK HTTP/golden tests. It used a cached `uv` environment with Python
+A post-rebase run passed **187 tests, no skips**, including the SDK HTTP/golden
+tests. Its runtime/test sources and dependency manifests match merged baseline
+[`6fc0e44`](https://github.com/glslang/binja-windbg-mcp/commit/6fc0e44beab8ac53a66fc4dd9f24d356a3bd397d).
+It used a cached `uv` environment with Python
 3.13.15, pytest 9.1.1 and MCP SDK 2.1.1. All 28 runtime package versions matched
 `requirements.txt`. The repository `.venv` contained the runtime dependencies but
 no pytest; that environment alone could not run the tests. The
@@ -355,6 +357,8 @@ no pytest; that environment alone could not run the tests. The
 development tools with `uv`.
 
 The first sandboxed run passed 181 tests; six HTTP tests failed because the sandbox
-refused loopback socket binding. Allowing those sockets produced the complete pass
-above. This rerun verifies the current Python suite; it does not replace or rerun
-the dated Binary Ninja GUI and Windows acceptance captures.
+refused loopback socket binding. Allowing those sockets produced a complete pass.
+After rebasing, one fake-BinDiff version probe timed out and cleanup raised a
+permission error; that test passed in isolation, and the complete rerun passed
+all 187 tests in 13.08 seconds. These runs verify the Python suite; they do not
+replace or rerun the dated Binary Ninja GUI and Windows acceptance captures.
