@@ -43,7 +43,15 @@ uv run --python 3.13 --with pytest --with ruff --with-requirements requirements.
 uv run --python 3.13 --with ruff ruff check .
 uv run --python 3.13 --with ruff ruff format --check .
 npx markdownlint-cli2@0.23.2 README.md "docs/**/*.md" "native/**/*.md"
+uv run --python 3.13 python tools/check_requirements.py
 ```
+
+The last command confirms that `requirements.txt` still pins exactly what the
+hash-pinned lock resolves to, since the Extension Manager installs from the plain file.
+[Continuous integration](../.github/workflows/ci.yml) runs these same checks on pull
+requests and on pushes to `main`. It does not build the optional helper, which needs an
+installed Binary Ninja 6 and its SDK, so the native steps above remain manual. A release
+pass still runs the checks locally against the isolated checkout being shipped.
 
 Review [validation scope](binja-windbg-mcp-validation.md) alongside these results.
 Unit tests and an archive inspection do not replace the recorded Personal GUI and
