@@ -2,7 +2,7 @@
 name = "binja-windbg-mcp"
 version = "0.2.0"
 requires-python = ">=3.13,<3.14"
-dependencies = ["mcp==2.1.1"]
+dependencies = ["mcp==2.2.0"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
