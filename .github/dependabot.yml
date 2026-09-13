@@ -1,0 +1,24 @@
+# Updates arrive grouped and weekly: a runtime bump also needs a regenerated
+# requirements.lock (see tools/check_requirements.py), so batching keeps that manual
+# step to one pull request instead of one per package.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci
+
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      runtime:
+        patterns: ["*"]
+    commit-message:
+      prefix: deps

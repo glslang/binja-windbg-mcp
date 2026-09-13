@@ -1,0 +1,57 @@
+# Mirrors the companion checks in docs/release.md. The optional native helper is not
+# built here: it needs an installed Binary Ninja 6 and its SDK, which CI does not have.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests
+    # Apple Silicon macOS is the supported platform; the suite stubs Binary Ninja itself.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.1.0
+        with:
+          enable-cache: true
+      - name: pytest
+        run: >
+          uv run --python 3.13 --with pytest --with-requirements requirements.txt
+          python -m pytest -q
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.1.0
+        with:
+          enable-cache: true
+      - name: ruff check
+        run: uv run --python 3.13 --with ruff ruff check .
+      - name: ruff format --check
+        run: uv run --python 3.13 --with ruff ruff format --check .
+      - name: Requirements stay in sync
+        run: uv run --python 3.13 python tools/check_requirements.py
+
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+      - name: markdownlint
+        run: npx --yes markdownlint-cli2@0.23.2 README.md "docs/**/*.md" "native/**/*.md"
