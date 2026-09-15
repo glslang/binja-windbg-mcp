@@ -79,3 +79,18 @@ archives succeeded, and the rebuilt package installed and uninstalled in a
 temporary profile with the original settings restored byte for byte. The earlier
 GUI/native-analysis capture above remains the evidence for the unchanged decoder
 patch; this follow-up changes its build and installation tooling.
+
+## Endpoint pairing and probe snapshot review checks
+
+Acceptance now requires each target endpoint to match its corresponding reference
+RVA exactly once. Unrelated reference functions, swapped pairs, missing endpoints
+and duplicates fail before diff acceptance. The delayed GUI import uses the saved
+`sources` directory, and the recorded hashes are calculated from the same bytes
+written there. Regression tests edit or remove the live checkout before executing
+the generated bootstrap and confirm the retained probe still runs.
+
+All **215 tests passed**, including eight capture regressions; Ruff, formatting
+and documentation lint passed. A fresh disposable GUI run passed all eight exact
+endpoint pairs and complete diffs with unchanged input and analysis state, followed
+by normal GUI exit. Its capture and hashed source snapshots remain local. The
+previously retained capture also passes the stricter pair check.
