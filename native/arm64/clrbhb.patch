@@ -1,0 +1,61 @@
+--- a/arch/arm64/disassembler/decode_scratchpad.c
++++ b/arch/arm64/disassembler/decode_scratchpad.c
+@@ -1583,6 +1583,7 @@
+ 	case ENC_AUTIBZ_HI_HINTS:
+ 	case ENC_AXFLAG_M_PSTATE:
+ 	case ENC_CFINV_M_PSTATE:
++	case ENC_CLRBHB_HI_HINTS:
+ 	case ENC_CSDB_HI_HINTS:
+ 	case ENC_DGH_HI_HINTS:
+ 	case ENC_DRPS_64E_BRANCH_REG:
+--- a/arch/arm64/il.h
++++ b/arch/arm64/il.h
+@@ -112,6 +112,7 @@
+ 	ARM64_INTRIN_SUBG,
+ 	ARM64_INTRIN_SUBP,
+ 	ARM64_INTRIN_SUBPS,
++	ARM64_INTRIN_HINT_CLRBHB,
+ 	ARM64_INTRIN_NORMAL_END, /* needed so intrinsics can be extended by other lists, like neon
+ 	                            intrinsics */
+ 	ARM64_INTRIN_INVALID = 0xFFFFFFFF,
+--- a/arch/arm64/il.cpp
++++ b/arch/arm64/il.cpp
+@@ -4164,6 +4164,9 @@
+ 	case ARM64_TSB:
+ 		il.AddInstruction(il.Intrinsic({}, ARM64_INTRIN_HINT_TSB, {}));
+ 		break;
++	case ARM64_CLRBHB:
++		il.AddInstruction(il.Intrinsic({}, ARM64_INTRIN_HINT_CLRBHB, {}));
++		break;
+ 	case ARM64_CSDB:
+ 		il.AddInstruction(il.Intrinsic({}, ARM64_INTRIN_HINT_CSDB, {}));
+ 		break;
+--- a/arch/arm64/arch_arm64.cpp
++++ b/arch/arm64/arch_arm64.cpp
+@@ -989,6 +989,8 @@
+ 			return "SystemHintOp_PSB";
+ 		case ARM64_INTRIN_HINT_TSB:
+ 			return "SystemHintOp_TSB";
++		case ARM64_INTRIN_HINT_CLRBHB:
++			return "SystemHintOp_CLRBHB";
+ 		case ARM64_INTRIN_HINT_CSDB:
+ 			return "SystemHintOp_CSDB";
+ 		case ARM64_INTRIN_HINT_BTI:
+--- a/arch/arm64/arm64test.py
++++ b/arch/arm64/arm64test.py
+@@ -12652,6 +12652,7 @@
+     #(b'\x1f\x22\x03\xd5', 'LLIL_INTRINSIC([],SystemHintOp_ESB,[])'), # hint 0x10 - now ARM64_ESB
+     #(b'\x3f\x22\x03\xd5', 'LLIL_INTRINSIC([],SystemHintOp_PSB,[])'), # hint 0x11 - now ARM64_PSB
+     #(b'\x5f\x22\x03\xd5', 'LLIL_INTRINSIC([],SystemHintOp_TSB,[])'), # hint 0x12 - now ARM64_TSB
++    (b'\xdf\x22\x03\xd5', 'LLIL_INTRINSIC([],SystemHintOp_CLRBHB,[])'),
+     #(b'\x9f\x22\x03\xd5', 'LLIL_INTRINSIC([],SystemHintOp_CSDB,[])'), # hint 0x14 - now ARM64_CSDB
+     #(b'\x5f\x24\x03\xd5', 'LLIL_INTRINSIC([],SystemHintOp_BTI,[])'), # hint 0x22 - now ARM64_BTI
+     # (b'\x00\xC0\x1E\xD5', 'LLIL_INTRINSIC([vbar_el3],_WriteStatusReg,[LLIL_REG.q(x0)])'), # msr vbar_el3, x0
+@@ -12831,6 +12832,7 @@
+ ]
+ 
+ disasm_test_cases = [
++    (b'\xdf\x22\x03\xd5', 'clrbhb  '),
+     # genter's immediate renders like the base disassembler's, bare for zero and 0x-prefixed otherwise
+     (b'\x20\x14\x20\x00', 'genter  #0'),
+     (b'\x25\x14\x20\x00', 'genter  #0x5'),

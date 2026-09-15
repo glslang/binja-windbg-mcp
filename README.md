@@ -216,3 +216,11 @@ item 60 on 2026-09-10; coverage import and report export remain deferred.
 The [complete mountmgr acceptance](docs/mountmgr-e2e.md) records 24 recognized IOCTL codes,
 93 host/silo case records, standard-user runtime access, guarded live actions, real module
 replacement, reconnect/authentication faults, cancellation and paired GUI shutdown.
+
+## Optional native CLRBHB fix
+
+The [pinned ARM64 replacement](native/arm64/README.md) supplies native CLRBHB text
+and IL on Binary Ninja 6.0.10601 Personal for Apple Silicon. The builder packages
+the library; installation requires an explicit profile. See the
+[completed native acceptance](docs/clrbhb-native-acceptance.md) for the sixteen
+Secure Kernel endpoints, full external comparison and upstream handoff.
