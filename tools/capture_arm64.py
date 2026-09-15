@@ -42,6 +42,27 @@ def wait_owned(process, timeout, *, clock=time.monotonic, sleep=time.sleep):
     return process.wait(timeout=5), forced
 
 
+def snapshot_probe(root, launcher, python_paths, config_path):
+    sources = root / "sources"
+    sources.mkdir()
+    hashes = {}
+    for key, source in (
+        ("probe_sha256", launcher.with_name("clrbhb_gui_probe.py")),
+        ("launcher_sha256", launcher),
+    ):
+        data = source.read_bytes()
+        (sources / source.name).write_bytes(data)
+        hashes[key] = hashlib.sha256(data).hexdigest()
+    paths = [str(sources), *(str(path.resolve()) for path in python_paths)]
+    code = (
+        "import sys\n" + f"sys.path[:0] = {paths!r}\n"
+        "import binaryninja as bn\nfrom PySide6.QtCore import QTimer\n"
+        "from clrbhb_gui_probe import start\n"
+        f"bn.execute_on_main_thread(lambda: QTimer.singleShot(2000, lambda: start({str(config_path)!r})))\n"
+    )
+    return code, hashes
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--case", choices=CASES, default="decode")
@@ -109,17 +130,8 @@ def main():
         }
         config_path = root / "config.json"
         config_path.write_text(json.dumps(config))
-        script = Path(__file__).with_name("clrbhb_gui_probe.py").resolve()
-        sources = root / "sources"
-        sources.mkdir()
-        for source in (script, Path(__file__).resolve()):
-            (sources / source.name).write_bytes(source.read_bytes())
-        paths = [str(script.parent), *(str(p.resolve()) for p in args.python_path)]
-        plugin_code = (
-            "import sys\n" + f"sys.path[:0] = {paths!r}\n"
-            "import binaryninja as bn\nfrom PySide6.QtCore import QTimer\n"
-            "from clrbhb_gui_probe import start\n"
-            f"bn.execute_on_main_thread(lambda: QTimer.singleShot(2000, lambda: start({str(config_path)!r})))\n"
+        plugin_code, source_hashes = snapshot_probe(
+            root, Path(__file__).resolve(), args.python_path, config_path
         )
         (plugin / "__init__.py").write_text(plugin_code)
         env = dict(
@@ -135,8 +147,7 @@ def main():
             "case": args.case,
             "captured_at": datetime.now(timezone.utc).isoformat(),
             "executable_sha256": hashlib.sha256(args.binaryninja.read_bytes()).hexdigest(),
-            "probe_sha256": hashlib.sha256(script.read_bytes()).hexdigest(),
-            "launcher_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            **source_hashes,
         }
         revision_file = args.binaryninja.parent.parent / "Resources/api_REVISION.txt"
         if revision_file.is_file():

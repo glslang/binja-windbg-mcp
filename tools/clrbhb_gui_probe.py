@@ -130,6 +130,22 @@ def full_acceptance(status, analysis_unchanged, inputs_unchanged):
     )
 
 
+def endpoint_matches(matches):
+    expected = {(0x10FC00 + offset, 0x11AC00 + offset) for offset in range(0, 0x400, 0x80)}
+    targets = {target for _, target in expected}
+    selected = [row for row in matches if int(row["target"]["coordinate"]["rva"], 16) in targets]
+    actual = {
+        (
+            int(row["reference"]["coordinate"]["rva"], 16),
+            int(row["target"]["coordinate"]["rva"], 16),
+        )
+        for row in selected
+    }
+    if len(selected) != len(expected) or actual != expected:
+        raise ValueError("comparison must contain each of the eight expected endpoint pairs once")
+    return selected
+
+
 def compare_endpoints(workspace, config, report, save):
     comparison_id = None
     evidence = {"status": "failed"}
@@ -167,11 +183,7 @@ def compare_endpoints(workspace, config, report, save):
             side: pages(workspace.similarity.results, comparison_id, side=side, kind="unmatched")
             for side in ("reference", "target")
         }
-        selected = [
-            row
-            for row in evidence["matches"]
-            if int(row["target"]["coordinate"]["rva"], 16) in range(0x11AC00, 0x11B000, 0x80)
-        ]
+        selected = endpoint_matches(evidence["matches"])
         evidence["diffs"] = []
         for match in selected:
             diff = workspace.similarity.diff(comparison_id, match["result_id"], limit=1)
