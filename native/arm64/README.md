@@ -18,10 +18,16 @@ python3 tools/build_arm64.py
 The builder downloads hash-checked source archives pinned in the script, applies
 `clrbhb.patch`, and produces `dist/arm64-clrbhb-bn6-abi187-macos-arm64.zip` and an
 unpacked directory. `--sdk-archive` and `--fmt-archive` accept previously downloaded
-archives for an offline build. SDK and fmt licenses accompany the library.
+archives for an offline build. Only verified archives are reused: each invocation
+extracts fresh SDK/fmt sources, reapplies the patch and compiles in a fresh temporary
+build directory. SDK and fmt licenses accompany the library.
 The build never installs anything or changes the application bundle.
 
 ## Install and remove
+
+Run with native arm64 Python on Apple Silicon macOS; installation rejects Intel
+Macs, x86_64 Python under Rosetta and other operating systems before changing a
+profile. Binary Ninja must also run natively, without Rosetta.
 
 Close Binary Ninja first. Choose an explicit user profile, preferably a disposable
 one for initial validation:
@@ -34,7 +40,8 @@ BN_USER_DIRECTORY=/tmp/bn-clrbhb-profile \
 ```
 
 The installer verifies the installed SDK revision and package hash, copies the
-library to that profile's `plugins`, and disables
+library to a temporary file, verifies its hash, then atomically publishes it in
+that profile's `plugins` and disables
 `corePlugins.architectures.aarch64`. It refuses an existing replacement. Removal
 checks ownership and restores the previous setting while preserving unrelated
 settings:

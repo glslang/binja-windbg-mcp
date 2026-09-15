@@ -8,6 +8,7 @@ import re
 import shutil
 import subprocess
 import tarfile
+import tempfile
 import urllib.request
 from pathlib import Path
 
@@ -22,6 +23,11 @@ RECEIPT = "clrbhb-install.json"
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def supported_host():
+    if platform.system() != "Darwin" or platform.machine() != "arm64":
+        raise ValueError("this package requires native arm64 Python on Apple Silicon macOS")
 
 
 def compatible(installation):
@@ -99,6 +105,7 @@ def write_json(path, value):
 
 
 def install(package, profile, installation):
+    supported_host()
     compatible(installation)
     manifest = read_package(package)
     stopped()
@@ -114,11 +121,20 @@ def install(package, profile, installation):
     settings = json.loads(settings_file.read_text()) if settings_file.exists() else {}
     prior = {"present": SETTING in settings, "value": settings.get(SETTING)}
     record = {"manifest": manifest, "previous_setting": prior}
-    # Write the ownership record first so an interrupted installation remains removable.
-    write_json(receipt, record)
-    shutil.copy2(package / PLUGIN, target)
-    settings[SETTING] = False
-    write_json(settings_file, settings)
+    # Only a verified, complete library may reach the loadable plugin path.
+    with tempfile.NamedTemporaryFile(dir=plugins, prefix=".clrbhb-", delete=False) as out:
+        temporary = Path(out.name)
+    try:
+        shutil.copy2(package / PLUGIN, temporary)
+        if digest(temporary) != manifest["plugin_sha256"]:
+            raise ValueError("copied plugin hash mismatch")
+        # Record ownership before rename so interruption after publication is recoverable.
+        write_json(receipt, record)
+        temporary.replace(target)
+        settings[SETTING] = False
+        write_json(settings_file, settings)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def uninstall(profile):
@@ -142,8 +158,7 @@ def uninstall(profile):
 
 
 def build(args):
-    if platform.system() != "Darwin" or platform.machine() != "arm64":
-        raise ValueError("this package targets Apple Silicon macOS")
+    supported_host()
     compatible(args.bn_install)
     root = Path(__file__).resolve().parents[1]
     work = args.build_dir or root / "build/arm64-clrbhb"
@@ -154,28 +169,27 @@ def build(args):
         "patch_sha256": digest(patch),
         "fmt_revision": FMT_REVISION,
     }
-    sdk = work / "sdk"
-    if sdk.exists():
-        if (
-            not (work / "source.json").exists()
-            or json.loads((work / "source.json").read_text()) != marker
-        ):
-            raise ValueError("build source differs; choose a new --build-dir")
-    else:
-        sdk_archive = archive(
-            args.sdk_archive or work / "sdk.tar.gz",
-            "Vector35/binaryninja-api",
-            SDK_REVISION,
-            SDK_SHA256,
-        )
-        fmt_archive = archive(
-            args.fmt_archive or work / "fmt.tar.gz", "fmtlib/fmt", FMT_REVISION, FMT_SHA256
-        )
+    sdk_archive = archive(
+        args.sdk_archive or work / "sdk.tar.gz",
+        "Vector35/binaryninja-api",
+        SDK_REVISION,
+        SDK_SHA256,
+    )
+    fmt_archive = archive(
+        args.fmt_archive or work / "fmt.tar.gz", "fmtlib/fmt", FMT_REVISION, FMT_SHA256
+    )
+    # Cache verified archives only. Every invocation gets fresh sources and CMake outputs.
+    with tempfile.TemporaryDirectory(prefix="build-", dir=work) as directory:
+        fresh = Path(directory)
+        sdk = fresh / "sdk"
         extract(sdk_archive, sdk)
         extract(fmt_archive, sdk / "vendor/fmt")
         subprocess.run(["git", "apply", "--check", str(patch)], cwd=sdk, check=True)
         subprocess.run(["git", "apply", str(patch)], cwd=sdk, check=True)
-        write_json(work / "source.json", marker)
+        compile_package(args, root, fresh, sdk, marker)
+
+
+def compile_package(args, root, work, sdk, marker):
     subprocess.run(
         [
             args.cmake,

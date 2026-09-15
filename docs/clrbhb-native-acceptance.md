@@ -60,3 +60,22 @@ in both baseline and patched trees; that is not a green upstream-suite claim.
 
 This acceptance does not settle CVE attribution, require Ultimate access, or fix
 Vector35's FirstSetupDialog crash.
+
+## Installer and rebuild review checks
+
+The PR review follow-up adds host/process architecture rejection before profile
+changes and publishes a verified temporary library with an atomic rename. Tests
+exercise partial copies, copy corruption, and failures before publication and
+while saving settings; recovery never requires removing an unverified plugin.
+
+Builds now revalidate the source archives and extract fresh SDK/fmt sources and
+CMake outputs on every invocation. Tests verify that an altered legacy source
+tree and matching marker are ignored, repeated builds use fresh directories, and
+a tampered cached archive is rejected before compilation.
+
+After these changes, **207 tests passed**, including twenty package tests. Ruff,
+formatting and documentation lint passed. A fresh native build from the pinned
+archives succeeded, and the rebuilt package installed and uninstalled in a
+temporary profile with the original settings restored byte for byte. The earlier
+GUI/native-analysis capture above remains the evidence for the unchanged decoder
+patch; this follow-up changes its build and installation tooling.

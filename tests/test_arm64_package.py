@@ -33,6 +33,8 @@ def inputs(tmp_path, monkeypatch):
     }
     builder.write_json(package / "manifest.json", manifest)
     monkeypatch.setattr(builder, "stopped", lambda: None)
+    monkeypatch.setattr(builder.platform, "system", lambda: "Darwin")
+    monkeypatch.setattr(builder.platform, "machine", lambda: "arm64")
     return package, tmp_path / "profile", installation
 
 
@@ -116,3 +118,157 @@ def test_archive_rejects_escape_and_links(tmp_path, name, link):
     with pytest.raises(ValueError, match="unsafe|link"):
         builder.extract(archive, tmp_path / "source")
     assert not (tmp_path / "escape").exists()
+
+
+@pytest.mark.parametrize("system,machine", [("Darwin", "x86_64"), ("Linux", "arm64")])
+@pytest.mark.parametrize("existing", [False, True])
+def test_incompatible_host_does_not_modify_profile(inputs, monkeypatch, system, machine, existing):
+    package, profile, installation = inputs
+    monkeypatch.setattr(builder.platform, "system", lambda: system)
+    monkeypatch.setattr(builder.platform, "machine", lambda: machine)
+    if existing:
+        profile.mkdir()
+        (profile / "settings.json").write_text('{"unrelated": true}\n')
+    with pytest.raises(ValueError, match="native arm64 Python"):
+        builder.install(package, profile, installation)
+    if existing:
+        assert list(profile.iterdir()) == [profile / "settings.json"]
+        assert (profile / "settings.json").read_text() == '{"unrelated": true}\n'
+    else:
+        assert not profile.exists()
+
+
+@pytest.mark.parametrize("failure", [OSError, KeyboardInterrupt])
+def test_partial_copy_never_publishes_plugin_or_receipt(inputs, monkeypatch, failure):
+    package, profile, installation = inputs
+    profile.mkdir()
+    settings = profile / "settings.json"
+    settings.write_text('{"unrelated": true}\n')
+
+    def partial_copy(source, destination):
+        Path(destination).write_bytes(b"partial")
+        raise failure("interrupted")
+
+    monkeypatch.setattr(builder.shutil, "copy2", partial_copy)
+    with pytest.raises(failure):
+        builder.install(package, profile, installation)
+    assert list((profile / "plugins").iterdir()) == []
+    assert not (profile / builder.RECEIPT).exists()
+    assert settings.read_text() == '{"unrelated": true}\n'
+
+
+def test_copied_plugin_is_verified_before_publication(inputs, monkeypatch):
+    package, profile, installation = inputs
+    monkeypatch.setattr(builder.shutil, "copy2", lambda src, dst: Path(dst).write_bytes(b"changed"))
+    with pytest.raises(ValueError, match="copied plugin hash mismatch"):
+        builder.install(package, profile, installation)
+    assert list((profile / "plugins").iterdir()) == []
+    assert not (profile / builder.RECEIPT).exists()
+    assert not (profile / "settings.json").exists()
+
+
+@pytest.mark.parametrize("stage", ["rename", "settings"])
+def test_install_interruption_after_receipt_is_removable(inputs, monkeypatch, stage):
+    package, profile, installation = inputs
+    original_write = builder.write_json
+    original_replace = Path.replace
+
+    def replace(source, target):
+        if stage == "rename" and Path(target).name == builder.PLUGIN:
+            raise OSError("rename interrupted")
+        return original_replace(source, target)
+
+    def write(path, value):
+        if stage == "settings" and path.name == "settings.json":
+            raise OSError("settings interrupted")
+        return original_write(path, value)
+
+    with monkeypatch.context() as failures:
+        failures.setattr(Path, "replace", replace)
+        failures.setattr(builder, "write_json", write)
+        with pytest.raises(OSError, match="interrupted"):
+            builder.install(package, profile, installation)
+    assert (profile / builder.RECEIPT).exists()
+    builder.uninstall(profile)
+    assert list((profile / "plugins").iterdir()) == []
+    assert not (profile / builder.RECEIPT).exists()
+
+
+def source_archive(path, files):
+    with tarfile.open(path, "w") as out:
+        for name, value in files.items():
+            item = tarfile.TarInfo("archive-root/" + name)
+            item.size = len(value)
+            out.addfile(item, io.BytesIO(value))
+
+
+def test_rebuild_uses_verified_archives_and_fresh_sources(inputs, monkeypatch, tmp_path):
+    from types import SimpleNamespace
+
+    _, _, installation = inputs
+    root = tmp_path / "repo"
+    work = tmp_path / "work"
+    (root / "native/arm64").mkdir(parents=True)
+    (root / "native/arm64/README.md").write_text("test readme")
+    patch = root / "native/arm64/clrbhb.patch"
+    patch.write_text(
+        "--- a/arch/arm64/entry.c\n+++ b/arch/arm64/entry.c\n@@ -1 +1 @@\n-original\n+patched\n"
+    )
+    sdk_archive = tmp_path / "sdk.tar"
+    fmt_archive = tmp_path / "fmt.tar"
+    source_archive(sdk_archive, {"arch/arm64/entry.c": b"original\n", "LICENSE.txt": b"SDK"})
+    source_archive(fmt_archive, {"LICENSE": b"FMT"})
+    monkeypatch.setattr(builder, "SDK_SHA256", builder.digest(sdk_archive))
+    monkeypatch.setattr(builder, "FMT_SHA256", builder.digest(fmt_archive))
+    monkeypatch.setattr(builder, "__file__", str(root / "tools/build_arm64.py"))
+    # The old cache marker matches, but its source has been modified.
+    legacy = work / "sdk/arch/arm64/entry.c"
+    legacy.parent.mkdir(parents=True)
+    legacy.write_text("untrusted\n")
+    builder.write_json(
+        work / "source.json",
+        {
+            "sdk_revision": builder.SDK_REVISION,
+            "patch_sha256": builder.digest(patch),
+            "fmt_revision": builder.FMT_REVISION,
+        },
+    )
+    real_run = builder.subprocess.run
+    sources = []
+
+    def run(command, **kwargs):
+        if command[0] == "git":
+            return real_run(command, **kwargs)
+        assert command[0] == "test-cmake"
+        if "-S" in command:
+            source = Path(command[command.index("-S") + 1])
+            sources.append(source)
+            assert (source / "entry.c").read_text() == "patched\n"
+            assert (source.parents[1] / "vendor/fmt/LICENSE").read_bytes() == b"FMT"
+            build = Path(command[command.index("-B") + 1])
+            assert not build.exists()
+            build.mkdir()
+            (build / builder.PLUGIN).write_bytes(b"compiled")
+            # A generated/edit artifact must never be trusted by the next invocation.
+            (source / "entry.c").write_text("modified after configure\n")
+        return None
+
+    monkeypatch.setattr(builder.subprocess, "run", run)
+    args = SimpleNamespace(
+        bn_install=installation,
+        build_dir=work,
+        sdk_archive=sdk_archive,
+        fmt_archive=fmt_archive,
+        cmake="test-cmake",
+        jobs=1,
+    )
+    builder.build(args)
+    builder.build(args)
+    assert len(sources) == 2 and sources[0] != sources[1]
+    assert not any(source.exists() for source in sources)
+    assert legacy.read_text() == "untrusted\n"
+    assert builder.read_package(root / "dist/arm64-clrbhb-bn6-abi187-macos-arm64")
+    sdk_archive.write_bytes(b"tampered cached archive")
+    with pytest.raises(ValueError, match="source archive hash mismatch"):
+        builder.build(args)
+    assert len(sources) == 2  # Refused before invoking the compiler.
