@@ -20,7 +20,8 @@ The builder downloads hash-checked source archives pinned in the script, applies
 unpacked directory. `--sdk-archive` and `--fmt-archive` accept previously downloaded
 archives for an offline build. Only verified archives are reused: each invocation
 extracts fresh SDK/fmt sources, reapplies the patch and compiles in a fresh temporary
-build directory. SDK and fmt licenses accompany the library.
+build directory with `CMAKE_OSX_ARCHITECTURES=arm64`. The built library must pass
+`lipo -verify_arch arm64` before packaging. SDK and fmt licenses accompany the library.
 The build never installs anything or changes the application bundle.
 
 ## Install and remove
@@ -44,7 +45,8 @@ BN_USER_DIRECTORY=/tmp/bn-clrbhb-profile \
 The installer verifies the installed SDK revision, the package hash, and all
 recorded build inputs against this checkout: patch digest, fmt revision, both
 source archive hashes and the minimum macOS version. Stale or incomplete manifests
-are rejected before profile changes. It copies the
+are rejected before profile changes. The package library must also pass the
+arm64 slice check before installation. It copies the
 library to a temporary file, verifies its hash, then disables
 `corePlugins.architectures.aarch64` before atomically publishing the library in
 that profile's `plugins`. It refuses an existing replacement. Removal checks

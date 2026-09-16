@@ -30,7 +30,7 @@ def inputs(tmp_path, monkeypatch):
     }
     builder.write_json(package / "manifest.json", manifest)
     monkeypatch.setattr(builder, "stopped", lambda: None)
-    monkeypatch.setattr(builder, "verify_arm64_executable", lambda executable: None)
+    monkeypatch.setattr(builder, "verify_arm64_binary", lambda executable: None)
     monkeypatch.setattr(builder.platform, "system", lambda: "Darwin")
     monkeypatch.setattr(builder.platform, "machine", lambda: "arm64")
     monkeypatch.setattr(builder.platform, "mac_ver", lambda: ("13.0", ("", "", ""), "arm64"))
@@ -243,6 +243,7 @@ def test_rebuild_uses_verified_archives_and_fresh_sources(inputs, monkeypatch, t
             return real_run(command, **kwargs)
         assert command[0] == "test-cmake"
         if "-S" in command:
+            assert "-DCMAKE_OSX_ARCHITECTURES=arm64" in command
             source = Path(command[command.index("-S") + 1])
             sources.append(source)
             assert (source / "entry.c").read_text() == "patched\n"
@@ -313,9 +314,9 @@ def test_executable_architecture_uses_selected_app(tmp_path, monkeypatch, return
     monkeypatch.setattr(builder.subprocess, "run", run)
     if returncode:
         with pytest.raises(ValueError, match="arm64 slice"):
-            builder.verify_arm64_executable(executable)
+            builder.verify_arm64_binary(executable)
     else:
-        builder.verify_arm64_executable(executable)
+        builder.verify_arm64_binary(executable)
     run.assert_called_once_with(
         ["/usr/bin/lipo", "-verify_arch", "arm64", str(executable)],
         capture_output=True,
@@ -333,7 +334,7 @@ def test_incompatible_app_leaves_profile_unchanged(inputs, monkeypatch, existing
         checked.append(executable)
         raise ValueError("selected Binary Ninja executable must contain an arm64 slice")
 
-    monkeypatch.setattr(builder, "verify_arm64_executable", reject)
+    monkeypatch.setattr(builder, "verify_arm64_binary", reject)
     if existing:
         profile.mkdir()
         (profile / "settings.json").write_text('{"unrelated": true}\n')
@@ -412,3 +413,48 @@ def test_unpinned_package_metadata_preserves_profile(inputs, field, missing, exi
         assert (profile / "settings.json").read_text() == '{"unrelated": true}\n'
     else:
         assert not profile.exists()
+
+
+@pytest.mark.parametrize("existing", [False, True])
+def test_non_arm64_package_leaves_profile_unchanged(inputs, monkeypatch, existing):
+    package, profile, installation = inputs
+    checked = []
+
+    def reject_plugin(binary):
+        checked.append(binary)
+        if binary.name == builder.PLUGIN:
+            raise ValueError("package library must contain an arm64 slice")
+
+    monkeypatch.setattr(builder, "verify_arm64_binary", reject_plugin)
+    if existing:
+        profile.mkdir()
+        (profile / "settings.json").write_text('{"unrelated": true}\n')
+    with pytest.raises(ValueError, match="arm64 slice"):
+        builder.install(package, profile, installation)
+    assert checked == [installation / "Contents/MacOS/binaryninja", package / builder.PLUGIN]
+    if existing:
+        assert list(profile.iterdir()) == [profile / "settings.json"]
+        assert (profile / "settings.json").read_text() == '{"unrelated": true}\n'
+    else:
+        assert not profile.exists()
+
+
+def test_non_arm64_build_is_not_packaged(inputs, monkeypatch, tmp_path):
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+
+    _, _, installation = inputs
+    root, work, sdk = (tmp_path / name for name in ("repo", "work", "sdk"))
+    checked = []
+
+    def reject(binary):
+        checked.append(binary)
+        raise ValueError("built library must contain an arm64 slice")
+
+    monkeypatch.setattr(builder, "verify_arm64_binary", reject)
+    monkeypatch.setattr(builder.subprocess, "run", Mock())
+    args = SimpleNamespace(cmake="test-cmake", bn_install=installation, jobs=1)
+    with pytest.raises(ValueError, match="arm64 slice"):
+        builder.compile_package(args, root, work, sdk, builder.package_metadata())
+    assert checked == [work / "build" / builder.PLUGIN]
+    assert not (root / "dist").exists()
