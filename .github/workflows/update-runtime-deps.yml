@@ -1,0 +1,81 @@
+# Dependabot cannot keep these files in sync: it never sees requirements.lock, and it has
+# no resolver for the flat requirements.txt (see tools/update_requirements.py). The weekly
+# runtime bump is recompiled here instead, so the pull request arrives already in sync.
+name: Runtime dependencies
+
+on:
+  schedule:
+    # Mondays, off the hour: scheduled runs are delayed when the minute is busy.
+    - cron: "23 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: runtime-deps
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Recompile
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require the pull request token
+        env:
+          TOKEN: ${{ secrets.RUNTIME_DEPS_TOKEN }}
+        run: |
+          test -n "$TOKEN" || {
+            echo "Set the RUNTIME_DEPS_TOKEN secret; see docs/release.md." >&2
+            exit 1
+          }
+
+      # Check out with the token rather than GITHUB_TOKEN. A pull request opened by
+      # GITHUB_TOKEN starts no further workflow run, so CI would never report on it and
+      # the required checks could never pass.
+      - uses: actions/checkout@v7
+        with:
+          token: ${{ secrets.RUNTIME_DEPS_TOKEN }}
+      - uses: astral-sh/setup-uv@v10.1.0
+        with:
+          enable-cache: true
+
+      - name: Recompile the lock and requirements.txt
+        id: update
+        run: |
+          uv run --python 3.13 python tools/update_requirements.py \
+            | tee "$RUNNER_TEMP/changes.md"
+          git diff --quiet || echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Requirements stay in sync
+        if: steps.update.outputs.changed
+        run: uv run --python 3.13 python tools/check_requirements.py
+
+      - name: Open the pull request
+        if: steps.update.outputs.changed
+        env:
+          GH_TOKEN: ${{ secrets.RUNTIME_DEPS_TOKEN }}
+        run: |
+          branch=deps/runtime
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git commit -a -m "deps: bump the runtime dependencies" \
+            -m "$(cat "$RUNNER_TEMP/changes.md")"
+          # The workflow owns this branch and rewrites it on every run.
+          git push --force origin "$branch"
+          open=$(gh pr list --head "$branch" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$open" ]; then
+            echo "Pushed onto the open pull request #$open."
+            exit 0
+          fi
+          {
+            echo "Recompiled from \`pyproject.toml\` by \`.github/workflows/update-runtime-deps.yml\`."
+            echo "\`requirements.lock\` and \`requirements.txt\` are regenerated together, so the"
+            echo "pins stay in sync and stay solvable."
+            echo
+            cat "$RUNNER_TEMP/changes.md"
+          } > "$RUNNER_TEMP/body.md"
+          gh pr create --base main --head "$branch" \
+            --title "deps: bump the runtime dependencies" \
+            --body-file "$RUNNER_TEMP/body.md"

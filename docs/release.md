@@ -63,6 +63,29 @@ archive is a separate asset extracted into that checkout; restart Binary Ninja
 before replacing a loaded helper. Choose a release tag and publish assets only
 when publication is explicitly requested. Preparing these files does not publish them.
 
+## Update the runtime pins
+
+[The Runtime dependencies workflow](../.github/workflows/update-runtime-deps.yml)
+recompiles the pins every Monday and opens a pull request. Run the same step by hand with:
+
+```console
+uv run --python 3.13 python tools/update_requirements.py
+```
+
+It moves each exact pin in `pyproject.toml` to the newest release on PyPI, recompiles
+`requirements.lock`, and rewrites `requirements.txt` from that lock, so the two cannot
+drift apart. Dependabot does not do this job and no longer watches the pip files: it never
+sees the lock, and it rewrites the flat `requirements.txt` one pin at a time with no
+resolver, which is how a `pydantic-core` bump once left the pins unsolvable.
+
+The workflow needs a `RUNTIME_DEPS_TOKEN` secret holding a fine-grained personal access
+token for this repository, with read and write access to Contents and to Pull requests.
+The default `GITHUB_TOKEN` cannot be used: a pull request it opens starts no further
+workflow run, so the required checks would never report. Repository settings must also
+allow GitHub Actions to create pull requests. GitHub disables scheduled workflows in a
+public repository after 60 days without repository activity, so check the workflow is
+still enabled if the weekly pull request stops arriving.
+
 ## 2026-09-12 readiness check
 
 The native source baseline is merged commit `ce3a5db4ee430b4e2563f7905851abe4f29ba76a`
