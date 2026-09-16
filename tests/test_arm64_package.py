@@ -25,10 +25,7 @@ def inputs(tmp_path, monkeypatch):
     package.mkdir()
     (package / builder.PLUGIN).write_bytes(b"test-library")
     manifest = {
-        "sdk_revision": builder.SDK_REVISION,
-        "core_abi": 187,
-        "platform": "macos-arm64",
-        "plugin": builder.PLUGIN,
+        **builder.package_metadata(),
         "plugin_sha256": builder.digest(package / builder.PLUGIN),
     }
     builder.write_json(package / "manifest.json", manifest)
@@ -388,3 +385,30 @@ def test_interrupted_uninstall_never_enables_both_providers(inputs, monkeypatch,
     assert not target.exists()
     assert not (profile / builder.RECEIPT).exists()
     assert json.loads(settings_file.read_text()) == original_settings
+
+
+@pytest.mark.parametrize(
+    "field",
+    ["patch_sha256", "fmt_revision", "sdk_archive_sha256", "fmt_archive_sha256", "minimum_macos"],
+)
+@pytest.mark.parametrize("missing", [False, True])
+@pytest.mark.parametrize("existing", [False, True])
+def test_unpinned_package_metadata_preserves_profile(inputs, field, missing, existing):
+    package, profile, installation = inputs
+    manifest_file = package / "manifest.json"
+    manifest = json.loads(manifest_file.read_text())
+    if missing:
+        del manifest[field]
+    else:
+        manifest[field] = "different-build-input"
+    builder.write_json(manifest_file, manifest)
+    if existing:
+        profile.mkdir()
+        (profile / "settings.json").write_text('{"unrelated": true}\n')
+    with pytest.raises(ValueError, match="mismatched " + field):
+        builder.install(package, profile, installation)
+    if existing:
+        assert list(profile.iterdir()) == [profile / "settings.json"]
+        assert (profile / "settings.json").read_text() == '{"unrelated": true}\n'
+    else:
+        assert not profile.exists()
