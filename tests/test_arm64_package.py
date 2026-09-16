@@ -176,12 +176,15 @@ def test_install_interruption_after_receipt_is_removable(inputs, monkeypatch, st
     original_replace = Path.replace
 
     def replace(source, target):
-        if stage == "rename" and Path(target).name == builder.PLUGIN:
-            raise OSError("rename interrupted")
+        if Path(target).name == builder.PLUGIN:
+            assert json.loads((profile / "settings.json").read_text())[builder.SETTING] is False
+            if stage == "rename":
+                raise OSError("rename interrupted")
         return original_replace(source, target)
 
     def write(path, value):
         if stage == "settings" and path.name == "settings.json":
+            assert not (profile / "plugins" / builder.PLUGIN).exists()
             raise OSError("settings interrupted")
         return original_write(path, value)
 
@@ -345,3 +348,43 @@ def test_incompatible_app_leaves_profile_unchanged(inputs, monkeypatch, existing
         assert (profile / "settings.json").read_text() == '{"unrelated": true}\n'
     else:
         assert not profile.exists()
+
+
+@pytest.mark.parametrize("previous", [None, True, False])
+@pytest.mark.parametrize("stage", ["remove", "restore"])
+def test_interrupted_uninstall_never_enables_both_providers(inputs, monkeypatch, previous, stage):
+    package, profile, installation = inputs
+    profile.mkdir()
+    original_settings = {"unrelated": True}
+    if previous is not None:
+        original_settings[builder.SETTING] = previous
+    settings_file = profile / "settings.json"
+    builder.write_json(settings_file, original_settings)
+    builder.install(package, profile, installation)
+    target = profile / "plugins" / builder.PLUGIN
+    original_unlink = Path.unlink
+
+    def unlink(path, *args, **kwargs):
+        if path == target:
+            assert json.loads(settings_file.read_text())[builder.SETTING] is False
+            if stage == "remove":
+                raise OSError("removal interrupted")
+        return original_unlink(path, *args, **kwargs)
+
+    def restore(path, value):
+        assert not target.exists()
+        assert (profile / builder.RECEIPT).exists()
+        raise OSError("settings restore interrupted")
+
+    with monkeypatch.context() as failures:
+        failures.setattr(Path, "unlink", unlink)
+        failures.setattr(builder, "write_json", restore)
+        with pytest.raises(OSError, match="interrupted"):
+            builder.uninstall(profile)
+    assert json.loads(settings_file.read_text())[builder.SETTING] is False
+    assert target.exists() is (stage == "remove")
+    assert (profile / builder.RECEIPT).exists()
+    builder.uninstall(profile)
+    assert not target.exists()
+    assert not (profile / builder.RECEIPT).exists()
+    assert json.loads(settings_file.read_text()) == original_settings

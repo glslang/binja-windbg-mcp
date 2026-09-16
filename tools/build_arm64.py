@@ -149,11 +149,11 @@ def install(package, profile, installation):
         shutil.copy2(package / PLUGIN, temporary)
         if digest(temporary) != manifest["plugin_sha256"]:
             raise ValueError("copied plugin hash mismatch")
-        # Record ownership before rename so interruption after publication is recoverable.
+        # Disable the bundled provider before publication; retain the receipt for recovery.
         write_json(receipt, record)
-        temporary.replace(target)
         settings[SETTING] = False
         write_json(settings_file, settings)
+        temporary.replace(target)
     finally:
         temporary.unlink(missing_ok=True)
 
@@ -167,6 +167,8 @@ def uninstall(profile):
         raise ValueError("installed plugin changed; refusing to remove an unowned file")
     settings_file = profile / "settings.json"
     settings = json.loads(settings_file.read_text()) if settings_file.exists() else {}
+    # Keep the receipt until both steps finish so interruption remains retryable.
+    target.unlink(missing_ok=True)
     if settings.get(SETTING) is False:
         prior = record["previous_setting"]
         if prior["present"]:
@@ -174,7 +176,6 @@ def uninstall(profile):
         else:
             settings.pop(SETTING, None)
         write_json(settings_file, settings)
-    target.unlink(missing_ok=True)
     receipt.unlink()
 
 

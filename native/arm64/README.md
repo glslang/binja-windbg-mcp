@@ -42,11 +42,12 @@ BN_USER_DIRECTORY=/tmp/bn-clrbhb-profile \
 ```
 
 The installer verifies the installed SDK revision and package hash, copies the
-library to a temporary file, verifies its hash, then atomically publishes it in
-that profile's `plugins` and disables
-`corePlugins.architectures.aarch64`. It refuses an existing replacement. Removal
-checks ownership and restores the previous setting while preserving unrelated
-settings:
+library to a temporary file, verifies its hash, then disables
+`corePlugins.architectures.aarch64` before atomically publishing the library in
+that profile's `plugins`. It refuses an existing replacement. Removal checks
+ownership, removes the replacement, then restores the previous setting while
+preserving unrelated settings. Both operations retain the receipt until finished
+so an interrupted operation can be recovered with `--uninstall`:
 
 ```sh
 python3 tools/build_arm64.py --uninstall --profile /tmp/bn-clrbhb-profile
