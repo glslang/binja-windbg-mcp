@@ -158,3 +158,16 @@ existing profiles remain unchanged for each stale or missing field.
 The full suite passed **278 tests**, with Ruff, formatting and changed-documentation
 lint passing. The previously built native package also passed all current pinned
 metadata and library-hash checks.
+
+## Built-library architecture checks — 2026-09-16
+
+CMake is explicitly configured with `CMAKE_OSX_ARCHITECTURES=arm64`. The emitted
+library must pass `lipo -verify_arch arm64` before it is packaged, and installation
+checks the package library's arm64 slice after its metadata and hash checks.
+Tests reject non-arm64 build output before packaging and non-arm64 packages
+before changing absent or existing profiles.
+
+The full suite passed **281 tests**; Ruff, formatting and documentation lint
+passed. A fresh native build succeeded with the explicit target, and the resulting
+package passed pinned metadata, library SHA-256 and arm64 slice validation.
+Generated packages remain local.

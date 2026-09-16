@@ -36,18 +36,18 @@ def supported_host():
         raise ValueError(f"this package requires macOS {MINIMUM_MACOS} or newer")
 
 
-def verify_arm64_executable(executable):
+def verify_arm64_binary(binary):
     try:
         result = subprocess.run(
-            ["/usr/bin/lipo", "-verify_arch", "arm64", str(executable)],
+            ["/usr/bin/lipo", "-verify_arch", "arm64", str(binary)],
             capture_output=True,
             text=True,
             check=False,
         )
     except OSError as error:
-        raise ValueError("cannot inspect the selected Binary Ninja executable") from error
+        raise ValueError(f"cannot inspect {binary.name} architecture") from error
     if result.returncode != 0:
-        raise ValueError("selected Binary Ninja executable must contain an arm64 slice")
+        raise ValueError(f"{binary.name} must contain an arm64 slice")
 
 
 def compatible(installation):
@@ -55,7 +55,7 @@ def compatible(installation):
     found = set(re.findall(r"\b[0-9a-f]{40}\b", revision.read_text()))
     if found != {SDK_REVISION}:
         raise ValueError("replacement requires Binary Ninja 6.0.10601 / pinned SDK revision")
-    verify_arm64_executable(installation / "Contents/MacOS/binaryninja")
+    verify_arm64_binary(installation / "Contents/MacOS/binaryninja")
 
 
 def archive(path, repository, revision, expected):
@@ -121,6 +121,7 @@ def read_package(package):
             raise ValueError(f"unsupported ARM64 plugin package: mismatched {field}")
     if digest(package / PLUGIN) != manifest["plugin_sha256"]:
         raise ValueError("plugin package hash mismatch")
+    verify_arm64_binary(package / PLUGIN)
     return manifest
 
 
@@ -228,6 +229,7 @@ def compile_package(args, root, work, sdk, metadata):
             str(work / "build"),
             "-DCMAKE_BUILD_TYPE=Release",
             "-DHEADLESS=ON",
+            "-DCMAKE_OSX_ARCHITECTURES=arm64",
             f"-DCMAKE_OSX_DEPLOYMENT_TARGET={MINIMUM_MACOS}",
             f"-DBN_INSTALL_DIR={args.bn_install.resolve()}",
         ],
@@ -236,6 +238,7 @@ def compile_package(args, root, work, sdk, metadata):
     subprocess.run(
         [args.cmake, "--build", str(work / "build"), "--parallel", str(args.jobs)], check=True
     )
+    verify_arm64_binary(work / "build" / PLUGIN)
     package = root / "dist/arm64-clrbhb-bn6-abi187-macos-arm64"
     package.mkdir(parents=True, exist_ok=True)
     shutil.copy2(work / "build" / PLUGIN, package / PLUGIN)
