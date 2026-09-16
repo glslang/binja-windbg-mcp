@@ -5,7 +5,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 COMPILE = (
-    "uv pip compile pyproject.toml --python-version 3.13 --generate-hashes -o requirements.lock"
+    "uv pip compile pyproject.toml --python-version 3.13 "
+    "--python-platform aarch64-apple-darwin --generate-hashes -o requirements.lock"
 )
 PIN = re.compile(r"([A-Za-z0-9._-]+)==([A-Za-z0-9.*+!-]+)")
 
