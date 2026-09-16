@@ -94,3 +94,21 @@ and documentation lint passed. A fresh disposable GUI run passed all eight exact
 endpoint pairs and complete diffs with unchanged input and analysis state, followed
 by normal GUI exit. Its capture and hashed source snapshots remain local. The
 previously retained capture also passes the stricter pair check.
+
+## macOS minimum and complete endpoint checks — 2026-09-16
+
+After rebasing onto main's MCP 2.2.0 dependency pins, installation and building
+reject macOS releases below 13.0 or an unreadable version. The host check, CMake
+deployment target and package manifest share the same minimum-version constant.
+Tests verify refusal leaves absent and existing profiles unchanged, and that 13.0
+and newer releases can install and remove the package.
+
+Endpoint acceptance now requires exactly three four-byte instructions at the
+entry, entry + 4 and entry + 8, with one block covering exactly twelve bytes and
+the CLRBHB intrinsic present. Missing final branches, malformed instruction
+lengths/addresses, extra instructions/blocks and shortened bounds are rejected.
+All sixteen endpoints in the retained capture pass the stricter check.
+
+The full suite passed **239 tests** with the current pinned requirements. Ruff,
+formatting, requirement/lock consistency and the complete documentation lint
+passed. The native decoder patch is unchanged; no new capture was published.
