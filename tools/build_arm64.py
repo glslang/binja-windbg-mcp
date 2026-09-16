@@ -3,9 +3,11 @@
 import argparse
 import hashlib
 import json
+import os
 import platform
 import re
 import shutil
+import stat
 import subprocess
 import tarfile
 import tempfile
@@ -132,9 +134,16 @@ def stopped():
 
 
 def write_json(path, value):
-    temporary = path.with_suffix(path.suffix + ".new")
-    temporary.write_text(json.dumps(value, indent=2) + "\n")
-    temporary.replace(path)
+    mode = stat.S_IMODE(path.stat().st_mode) if path.exists() else 0o600
+    fd, name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    temporary = Path(name)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as out:
+            os.fchmod(out.fileno(), mode)
+            out.write(json.dumps(value, indent=2) + "\n")
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def install(package, profile, installation):

@@ -3,6 +3,8 @@
 import importlib.util
 import io
 import json
+import os
+import stat
 import tarfile
 from pathlib import Path
 
@@ -45,13 +47,16 @@ def test_install_uninstall_preserves_profile(inputs, previous):
     if previous is not None:
         settings[builder.SETTING] = previous
     builder.write_json(profile / "settings.json", settings)
+    (profile / "settings.json").chmod(0o600)
     builder.install(package, profile, installation)
+    assert stat.S_IMODE((profile / "settings.json").stat().st_mode) == 0o600
     installed = json.loads((profile / "settings.json").read_text())
     assert installed[builder.SETTING] is False
     installed["user.changed"] = 1
     builder.write_json(profile / "settings.json", installed)
     builder.uninstall(profile)
     assert json.loads((profile / "settings.json").read_text()) == {**settings, "user.changed": 1}
+    assert stat.S_IMODE((profile / "settings.json").stat().st_mode) == 0o600
     assert not (profile / "plugins" / builder.PLUGIN).exists()
     assert not (profile / builder.RECEIPT).exists()
 
@@ -458,3 +463,59 @@ def test_non_arm64_build_is_not_packaged(inputs, monkeypatch, tmp_path):
         builder.compile_package(args, root, work, sdk, builder.package_metadata())
     assert checked == [work / "build" / builder.PLUGIN]
     assert not (root / "dist").exists()
+
+
+@pytest.mark.parametrize("mode", [0o600, 0o640, 0o644])
+def test_json_replacement_preserves_mode_before_writing(tmp_path, monkeypatch, mode):
+    path = tmp_path / "settings.json"
+    path.write_text('{"old": true}\n')
+    path.chmod(mode)
+    real_fchmod = os.fchmod
+    observed = []
+
+    def fchmod(fd, permissions):
+        assert os.fstat(fd).st_size == 0
+        assert stat.S_IMODE(os.fstat(fd).st_mode) == 0o600
+        observed.append(permissions)
+        real_fchmod(fd, permissions)
+
+    monkeypatch.setattr(builder.os, "fchmod", fchmod)
+    previous_umask = os.umask(0o022)
+    try:
+        builder.write_json(path, {"new": True})
+    finally:
+        os.umask(previous_umask)
+    assert observed == [mode]
+    assert stat.S_IMODE(path.stat().st_mode) == mode
+    assert json.loads(path.read_text()) == {"new": True}
+    assert list(tmp_path.iterdir()) == [path]
+
+
+def test_new_json_file_defaults_to_private_permissions(tmp_path):
+    path = tmp_path / "receipt.json"
+    previous_umask = os.umask(0o022)
+    try:
+        builder.write_json(path, {"private": True})
+    finally:
+        os.umask(previous_umask)
+    assert stat.S_IMODE(path.stat().st_mode) == 0o600
+
+
+def test_failed_json_replace_preserves_original_and_cleans_temporary(tmp_path, monkeypatch):
+    path = tmp_path / "settings.json"
+    original = '{"private": true}\n'
+    path.write_text(original)
+    path.chmod(0o600)
+
+    def fail(source, destination):
+        assert destination == path
+        assert stat.S_IMODE(source.stat().st_mode) == 0o600
+        assert json.loads(source.read_text()) == {"updated": True}
+        raise OSError("replace failed")
+
+    monkeypatch.setattr(Path, "replace", fail)
+    with pytest.raises(OSError, match="replace failed"):
+        builder.write_json(path, {"updated": True})
+    assert path.read_text() == original
+    assert stat.S_IMODE(path.stat().st_mode) == 0o600
+    assert list(tmp_path.iterdir()) == [path]

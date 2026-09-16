@@ -52,7 +52,8 @@ library to a temporary file, verifies its hash, then disables
 that profile's `plugins`. It refuses an existing replacement. Removal checks
 ownership, removes the replacement, then restores the previous setting while
 preserving unrelated settings. Both operations retain the receipt until finished
-so an interrupted operation can be recovered with `--uninstall`:
+so an interrupted operation can be recovered with `--uninstall`. Atomic JSON
+writes preserve existing file permission bits; new files default to `0600`:
 
 ```sh
 python3 tools/build_arm64.py --uninstall --profile /tmp/bn-clrbhb-profile

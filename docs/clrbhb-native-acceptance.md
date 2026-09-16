@@ -171,3 +171,14 @@ The full suite passed **281 tests**; Ruff, formatting and documentation lint
 passed. A fresh native build succeeded with the explicit target, and the resulting
 package passed pinned metadata, library SHA-256 and arm64 slice validation.
 Generated packages remain local.
+
+## Settings-file permission checks — 2026-09-16
+
+Atomic JSON writes now use uniquely named private temporary files, set the
+existing destination's permission bits before writing content, and clean up on
+failure. New files default to `0600`. Install/uninstall tests assert that a private
+settings file remains private; separate regressions cover `0600`, `0640`, `0644`,
+a permissive process umask, and a failed replace preserving the original file.
+
+The full suite passed **286 tests**, with Ruff, formatting and changed-documentation
+lint passing.
