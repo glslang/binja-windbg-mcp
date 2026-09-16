@@ -132,3 +132,17 @@ was removed. The capture remains local. The full suite passed **252 tests**;
 an initial concurrent run had one external-process fixture timeout and cleanup
 failure, and the suite passed on rerun after GUI exit. Ruff, formatting and
 changed-documentation lint passed.
+
+## Provider-switch interruption checks — 2026-09-16
+
+Uninstall removes the owned replacement before restoring the bundled-plugin
+setting and keeps the receipt until both steps finish. Installation follows the
+corresponding order: save the receipt, disable the bundled provider, then publish
+the verified replacement. This avoids an interruption leaving both providers
+enabled. An interrupted switch remains recoverable with `--uninstall`.
+
+Regression tests interrupt removal and setting restoration with absent, true and
+false prior settings, then retry successfully. Install interruption tests also
+assert the bundled provider is disabled before publication. The full suite passed
+**258 tests**; Ruff, formatting and changed-documentation lint passed. A real
+package install/uninstall in a temporary profile restored the original settings.
