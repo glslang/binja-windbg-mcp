@@ -33,6 +33,7 @@ def inputs(tmp_path, monkeypatch):
     }
     builder.write_json(package / "manifest.json", manifest)
     monkeypatch.setattr(builder, "stopped", lambda: None)
+    monkeypatch.setattr(builder, "verify_arm64_executable", lambda executable: None)
     monkeypatch.setattr(builder.platform, "system", lambda: "Darwin")
     monkeypatch.setattr(builder.platform, "machine", lambda: "arm64")
     monkeypatch.setattr(builder.platform, "mac_ver", lambda: ("13.0", ("", "", ""), "arm64"))
@@ -300,3 +301,47 @@ def test_minimum_and_newer_macos_allow_install(inputs, monkeypatch, release):
     assert (profile / "plugins" / builder.PLUGIN).read_bytes() == b"test-library"
     assert json.loads((profile / "settings.json").read_text())[builder.SETTING] is False
     builder.uninstall(profile)
+
+
+@pytest.mark.parametrize("returncode", [0, 1])
+def test_executable_architecture_uses_selected_app(tmp_path, monkeypatch, returncode):
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+
+    executable = tmp_path / "Selected.app/Contents/MacOS/binaryninja"
+    run = Mock(return_value=SimpleNamespace(returncode=returncode))
+    monkeypatch.setattr(builder.subprocess, "run", run)
+    if returncode:
+        with pytest.raises(ValueError, match="arm64 slice"):
+            builder.verify_arm64_executable(executable)
+    else:
+        builder.verify_arm64_executable(executable)
+    run.assert_called_once_with(
+        ["/usr/bin/lipo", "-verify_arch", "arm64", str(executable)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+@pytest.mark.parametrize("existing", [False, True])
+def test_incompatible_app_leaves_profile_unchanged(inputs, monkeypatch, existing):
+    package, profile, installation = inputs
+    checked = []
+
+    def reject(executable):
+        checked.append(executable)
+        raise ValueError("selected Binary Ninja executable must contain an arm64 slice")
+
+    monkeypatch.setattr(builder, "verify_arm64_executable", reject)
+    if existing:
+        profile.mkdir()
+        (profile / "settings.json").write_text('{"unrelated": true}\n')
+    with pytest.raises(ValueError, match="arm64 slice"):
+        builder.install(package, profile, installation)
+    assert checked == [installation / "Contents/MacOS/binaryninja"]
+    if existing:
+        assert list(profile.iterdir()) == [profile / "settings.json"]
+        assert (profile / "settings.json").read_text() == '{"unrelated": true}\n'
+    else:
+        assert not profile.exists()

@@ -36,11 +36,26 @@ def supported_host():
         raise ValueError(f"this package requires macOS {MINIMUM_MACOS} or newer")
 
 
+def verify_arm64_executable(executable):
+    try:
+        result = subprocess.run(
+            ["/usr/bin/lipo", "-verify_arch", "arm64", str(executable)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError as error:
+        raise ValueError("cannot inspect the selected Binary Ninja executable") from error
+    if result.returncode != 0:
+        raise ValueError("selected Binary Ninja executable must contain an arm64 slice")
+
+
 def compatible(installation):
     revision = installation / "Contents/Resources/api_REVISION.txt"
     found = set(re.findall(r"\b[0-9a-f]{40}\b", revision.read_text()))
     if found != {SDK_REVISION}:
         raise ValueError("replacement requires Binary Ninja 6.0.10601 / pinned SDK revision")
+    verify_arm64_executable(installation / "Contents/MacOS/binaryninja")
 
 
 def archive(path, repository, revision, expected):

@@ -150,6 +150,26 @@ def endpoint_matches(matches):
     return selected
 
 
+def endpoint_diff_complete(diff, match):
+    items = diff.get("items", [])
+    if len(items) != 3 or diff.get("truncated") or diff.get("next_offset") is not None:
+        return False
+    for side in ("reference", "target"):
+        if diff.get("instructions_truncated", {}).get(side) is not False:
+            return False
+        base = int(match[side]["coordinate"]["rva"], 16)
+        for index, item in enumerate(items):
+            instruction = item.get(side)
+            if not instruction or instruction.get("text_truncated") is not False:
+                return False
+            if (
+                int(instruction["rva"], 16) != base + 4 * index
+                or not instruction.get("text", "").strip()
+            ):
+                return False
+    return True
+
+
 def compare_endpoints(workspace, config, report, save):
     comparison_id = None
     evidence = {"status": "failed"}
@@ -216,7 +236,8 @@ def compare_endpoints(workspace, config, report, save):
         )
         evidence["inputs_unchanged"] = unchanged
         text_complete = len(selected) == 8 and all(
-            d["items"] and not any(d["instructions_truncated"].values()) for d in evidence["diffs"]
+            endpoint_diff_complete(diff, match)
+            for diff, match in zip(evidence["diffs"], selected, strict=True)
         )
         evidence["status"] = (
             "passed"

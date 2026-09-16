@@ -5,6 +5,7 @@ import gzip
 import hashlib
 import importlib.util
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -58,11 +59,27 @@ def test_comparison_requires_exact_endpoint_pairs(tmp_path, monkeypatch, fault):
         "items": [] if kw.get("kind") == "unmatched" else rows,
         "next_offset": None,
     }
-    similarity.diff.return_value = {
-        "items": [{"text": "complete"}],
-        "next_offset": None,
-        "instructions_truncated": {"reference": False, "target": False},
-    }
+
+    def diff(comparison, result_id, **kwargs):
+        i = int(result_id)
+        return {
+            "items": [
+                {
+                    side: {
+                        "rva": hex(base + 0x80 * i + offset),
+                        "text": "instruction",
+                        "text_truncated": False,
+                    }
+                    for side, base in (("reference", 0x10FC00), ("target", 0x11AC00))
+                }
+                for offset in (0, 4, 8)
+            ],
+            "next_offset": None,
+            "truncated": False,
+            "instructions_truncated": {"reference": False, "target": False},
+        }
+
+    similarity.diff.side_effect = diff
     workspace = Mock(similarity=similarity)
     workspace.list_binaries.return_value = {
         "binaries": [{"binary_id": side} for side in ("reference", "target")]
@@ -89,6 +106,9 @@ def test_retained_capture_has_all_expected_pairs():
     report = json.loads(gzip.decompress(source.read_bytes()))
     selected = gui.endpoint_matches(report["capture"]["comparison"]["matches"])
     assert len(selected) == 8
+    matches = {row["result_id"]: row for row in selected}
+    for diff in report["capture"]["comparison"]["diffs"]:
+        assert gui.endpoint_diff_complete(diff, matches[diff["result"]["result_id"]])
     endpoints = report["capture"]["endpoints"]
     assert len(endpoints) == 16 and all(gui.endpoint_analysis_complete(row) for row in endpoints)
 
@@ -103,7 +123,23 @@ def test_delayed_import_executes_the_hashed_snapshot(tmp_path, monkeypatch, chec
     launcher = live / "capture_arm64.py"
     launcher.write_text("original launcher")
     probe = live / "clrbhb_gui_probe.py"
-    original = b'from pathlib import Path\ndef start(path):\n    Path(path).write_text("snapshot executed")\n'
+    package = live / "binja_windbg_mcp"
+    package.mkdir()
+    for source in (TOOLS.parent / "binja_windbg_mcp").glob("*.py"):
+        shutil.copy2(source, package / source.name)
+    (package / "native").mkdir()
+    helper = package / "native/libbinja_binexport.dylib"
+    helper.write_bytes(b"snapshot export helper")
+    original = b"""from pathlib import Path
+def start(path):
+    from binja_windbg_mcp import adapter, similarity_adapter, binexport
+    helper = binexport.HELPER
+    assert helper.read_bytes() == b"snapshot export helper"
+    assert adapter.Workspace.__name__ == "Workspace"
+    assert similarity_adapter.NativeSimilarity.__name__ == "NativeSimilarity"
+    assert helper.parent.parent == Path(adapter.__file__).parent
+    Path(path).write_text("snapshot executed")
+"""
     probe.write_bytes(original)
     output = tmp_path / "capture"
     output.mkdir()
@@ -112,10 +148,10 @@ def test_delayed_import_executes_the_hashed_snapshot(tmp_path, monkeypatch, chec
     if checkout_change == "edited":
         probe.write_text('raise RuntimeError("live checkout was imported")\n')
         launcher.write_text("changed launcher")
+        (package / "adapter.py").write_text('raise RuntimeError("live companion imported")\n')
+        helper.write_bytes(b"changed export helper")
     else:
-        probe.unlink()
-        launcher.unlink()
-        live.rmdir()
+        shutil.rmtree(live)
     bootstrap = output / "bootstrap.py"
     bootstrap.write_text(
         """import sys
@@ -130,6 +166,9 @@ sys.modules["PySide6.QtCore"] = SimpleNamespace(QTimer=SimpleNamespace(singleSho
     assert hashes["probe_sha256"] == hashlib.sha256(original).hexdigest()
     assert hashes["launcher_sha256"] == hashlib.sha256(b"original launcher").hexdigest()
     assert (output / "sources/clrbhb_gui_probe.py").read_bytes() == original
+    for relative, digest in hashes["companion_sha256"].items():
+        assert hashlib.sha256((output / "sources" / relative).read_bytes()).hexdigest() == digest
+    assert "binja_windbg_mcp/native/libbinja_binexport.dylib" in hashes["companion_sha256"]
 
 
 @pytest.mark.parametrize(
@@ -177,3 +216,54 @@ def test_endpoint_analysis_requires_three_instructions_and_exact_bounds(fault):
     assert gui.endpoint_analysis_complete({"address": "0x1000", "function": function}) is (
         fault is None
     )
+
+
+@pytest.mark.parametrize(
+    "fault",
+    [
+        None,
+        "single_row",
+        "missing_side",
+        "duplicate",
+        "wrong_reference",
+        "wrong_target",
+        "text_truncated",
+        "blank_text",
+        "function_truncated",
+    ],
+)
+def test_endpoint_diff_requires_three_complete_paired_rows(fault):
+    match = {
+        side: {"coordinate": {"rva": hex(base)}}
+        for side, base in (("reference", 0x1000), ("target", 0x2000))
+    }
+    rows = [
+        {
+            side: {"rva": hex(base + offset), "text": "instruction", "text_truncated": False}
+            for side, base in (("reference", 0x1000), ("target", 0x2000))
+        }
+        for offset in (0, 4, 8)
+    ]
+    diff = {
+        "items": rows,
+        "truncated": False,
+        "next_offset": None,
+        "instructions_truncated": {"reference": False, "target": False},
+    }
+    if fault == "single_row":
+        del rows[1:]
+    elif fault == "missing_side":
+        rows[-1]["reference"] = None
+    elif fault == "duplicate":
+        rows[-1] = copy.deepcopy(rows[0])
+    elif fault == "wrong_reference":
+        rows[-1]["reference"]["rva"] = "0x3000"
+    elif fault == "wrong_target":
+        rows[-1]["target"]["rva"] = "0x3000"
+    elif fault == "text_truncated":
+        rows[-1]["target"]["text_truncated"] = True
+    elif fault == "blank_text":
+        rows[-1]["reference"]["text"] = " "
+    elif fault == "function_truncated":
+        diff["instructions_truncated"]["reference"] = True
+    assert gui.endpoint_diff_complete(diff, match) is (fault is None)
