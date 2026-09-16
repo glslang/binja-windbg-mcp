@@ -41,7 +41,10 @@ BN_USER_DIRECTORY=/tmp/bn-clrbhb-profile \
   '/Applications/Binary Ninja.app/Contents/MacOS/binaryninja' --new-instance
 ```
 
-The installer verifies the installed SDK revision and package hash, copies the
+The installer verifies the installed SDK revision, the package hash, and all
+recorded build inputs against this checkout: patch digest, fmt revision, both
+source archive hashes and the minimum macOS version. Stale or incomplete manifests
+are rejected before profile changes. It copies the
 library to a temporary file, verifies its hash, then disables
 `corePlugins.architectures.aarch64` before atomically publishing the library in
 that profile's `plugins`. It refuses an existing replacement. Removal checks

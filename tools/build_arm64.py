@@ -99,15 +99,26 @@ def extract(path, destination):
                 shutil.copyfileobj(inp, out)
 
 
+def package_metadata():
+    patch = Path(__file__).resolve().parents[1] / "native/arm64/clrbhb.patch"
+    return {
+        "sdk_revision": SDK_REVISION,
+        "core_abi": 187,
+        "platform": "macos-arm64",
+        "plugin": PLUGIN,
+        "patch_sha256": digest(patch),
+        "fmt_revision": FMT_REVISION,
+        "sdk_archive_sha256": SDK_SHA256,
+        "fmt_archive_sha256": FMT_SHA256,
+        "minimum_macos": MINIMUM_MACOS,
+    }
+
+
 def read_package(package):
     manifest = json.loads((package / "manifest.json").read_text())
-    if (
-        manifest.get("sdk_revision") != SDK_REVISION
-        or manifest.get("core_abi") != 187
-        or manifest.get("platform") != "macos-arm64"
-        or manifest.get("plugin") != PLUGIN
-    ):
-        raise ValueError("unsupported ARM64 plugin package")
+    for field, expected in package_metadata().items():
+        if manifest.get(field) != expected:
+            raise ValueError(f"unsupported ARM64 plugin package: mismatched {field}")
     if digest(package / PLUGIN) != manifest["plugin_sha256"]:
         raise ValueError("plugin package hash mismatch")
     return manifest
@@ -186,11 +197,7 @@ def build(args):
     work = args.build_dir or root / "build/arm64-clrbhb"
     work.mkdir(parents=True, exist_ok=True)
     patch = root / "native/arm64/clrbhb.patch"
-    marker = {
-        "sdk_revision": SDK_REVISION,
-        "patch_sha256": digest(patch),
-        "fmt_revision": FMT_REVISION,
-    }
+    metadata = package_metadata()
     sdk_archive = archive(
         args.sdk_archive or work / "sdk.tar.gz",
         "Vector35/binaryninja-api",
@@ -208,10 +215,10 @@ def build(args):
         extract(fmt_archive, sdk / "vendor/fmt")
         subprocess.run(["git", "apply", "--check", str(patch)], cwd=sdk, check=True)
         subprocess.run(["git", "apply", str(patch)], cwd=sdk, check=True)
-        compile_package(args, root, fresh, sdk, marker)
+        compile_package(args, root, fresh, sdk, metadata)
 
 
-def compile_package(args, root, work, sdk, marker):
+def compile_package(args, root, work, sdk, metadata):
     subprocess.run(
         [
             args.cmake,
@@ -238,14 +245,8 @@ def compile_package(args, root, work, sdk, marker):
     write_json(
         package / "manifest.json",
         {
-            **marker,
-            "core_abi": 187,
-            "platform": "macos-arm64",
-            "minimum_macos": MINIMUM_MACOS,
-            "plugin": PLUGIN,
+            **metadata,
             "plugin_sha256": digest(package / PLUGIN),
-            "sdk_archive_sha256": SDK_SHA256,
-            "fmt_archive_sha256": FMT_SHA256,
         },
     )
     print(shutil.make_archive(str(package), "zip", package))

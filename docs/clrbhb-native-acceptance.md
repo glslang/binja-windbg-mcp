@@ -146,3 +146,15 @@ false prior settings, then retry successfully. Install interruption tests also
 assert the bundled provider is disabled before publication. The full suite passed
 **258 tests**; Ruff, formatting and changed-documentation lint passed. A real
 package install/uninstall in a temporary profile restored the original settings.
+
+## Package provenance checks — 2026-09-16
+
+Building and installation now share the complete expected manifest metadata.
+Installation rejects a missing or mismatched patch digest, fmt revision, SDK/fmt
+archive hash or minimum macOS version, in addition to the SDK, ABI, platform,
+plugin name and library hash checks. Regression cases verify both absent and
+existing profiles remain unchanged for each stale or missing field.
+
+The full suite passed **278 tests**, with Ruff, formatting and changed-documentation
+lint passing. The previously built native package also passed all current pinned
+metadata and library-hash checks.
