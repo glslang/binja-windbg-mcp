@@ -42,6 +42,27 @@ def wait_owned(process, timeout, *, clock=time.monotonic, sleep=time.sleep):
     return process.wait(timeout=5), forced
 
 
+def snapshot_companion(sources, launcher, python_paths):
+    for directory in [*python_paths, launcher.parent.parent]:
+        package = directory.resolve() / "binja_windbg_mcp"
+        if (package / "__init__.py").is_file():
+            break
+    else:
+        raise ValueError("provide the companion checkout through --python-path")
+    helper = package / "native/libbinja_binexport.dylib"
+    if not helper.is_file():
+        raise ValueError("the companion checkout needs its native BinExport helper")
+    hashes = {}
+    for source in [*sorted(package.rglob("*.py")), helper]:
+        relative = source.relative_to(package.parent)
+        destination = sources / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        data = source.read_bytes()
+        destination.write_bytes(data)
+        hashes[relative.as_posix()] = hashlib.sha256(data).hexdigest()
+    return hashes
+
+
 def snapshot_probe(root, launcher, python_paths, config_path):
     sources = root / "sources"
     sources.mkdir()
@@ -53,6 +74,7 @@ def snapshot_probe(root, launcher, python_paths, config_path):
         data = source.read_bytes()
         (sources / source.name).write_bytes(data)
         hashes[key] = hashlib.sha256(data).hexdigest()
+    hashes["companion_sha256"] = snapshot_companion(sources, launcher, python_paths)
     paths = [str(sources), *(str(path.resolve()) for path in python_paths)]
     code = (
         "import sys\n" + f"sys.path[:0] = {paths!r}\n"

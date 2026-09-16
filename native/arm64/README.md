@@ -27,7 +27,9 @@ The build never installs anything or changes the application bundle.
 
 Run with native arm64 Python on Apple Silicon macOS 13.0 or newer. Installation
 rejects Intel Macs, x86_64 Python under Rosetta, other operating systems and macOS
-versions below 13.0 (or an unreadable version) before changing a profile. Binary Ninja must also run natively, without Rosetta.
+versions below 13.0 (or an unreadable version) before changing a profile. The
+selected Binary Ninja executable must contain an arm64 slice, checked with
+macOS `lipo`. Binary Ninja must also run natively, without Rosetta.
 
 Close Binary Ninja first. Choose an explicit user profile, preferably a disposable
 one for initial validation:
@@ -59,7 +61,11 @@ Do not reuse serialized IL across stock and replacement architectures.
 `tools/capture_arm64.py` installs the package into a new disposable profile,
 verifies the loaded native image, checks CLRBHB text and LLIL, analyzes all sixteen
 recorded Secure Kernel endpoints, and runs a complete external BinDiff comparison
-with all eight endpoint diffs and unchanged-input checks. It requires the exact
+with all eight endpoint diffs and unchanged-input checks. Each diff must contain
+the three expected reference/target instruction RVAs with complete text. The
+launcher saves and hashes the companion Python modules and native BinExport helper
+next to the probe so delayed imports use those copies. Third-party dependencies
+remain supplied through `--python-path`. It requires the exact
 ARM64 pair identified by hashes in `tools/clrbhb_gui_probe.py`:
 
 ```sh

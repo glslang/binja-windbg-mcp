@@ -112,3 +112,23 @@ All sixteen endpoints in the retained capture pass the stricter check.
 The full suite passed **239 tests** with the current pinned requirements. Ruff,
 formatting, requirement/lock consistency and the complete documentation lint
 passed. The native decoder patch is unchanged; no new capture was published.
+
+## Executable, companion snapshot and diff-row checks — 2026-09-16
+
+Compatibility now uses macOS `lipo -verify_arch arm64` on the selected app's
+executable before changing a profile. The capture saves and hashes the companion
+Python modules and native BinExport helper alongside the probe. Delayed-import
+regressions use the real companion modules after editing or removing the copied
+checkout, and verify the saved helper and all recorded source hashes.
+
+Each endpoint diff must have three complete rows pairing the expected reference
+and target instruction RVAs. Missing sides, wrong or duplicated RVAs, blank or
+truncated text, and truncated function output fail acceptance. The retained
+capture satisfies this stricter check.
+
+A new local GUI run passed with all fifteen companion file hashes verified and
+all eight three-row diffs complete, then exited normally. Its disposable plugin
+was removed. The capture remains local. The full suite passed **252 tests**;
+an initial concurrent run had one external-process fixture timeout and cleanup
+failure, and the suite passed on rerun after GUI exit. Ruff, formatting and
+changed-documentation lint passed.
