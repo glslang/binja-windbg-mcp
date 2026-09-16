@@ -25,9 +25,9 @@ The build never installs anything or changes the application bundle.
 
 ## Install and remove
 
-Run with native arm64 Python on Apple Silicon macOS; installation rejects Intel
-Macs, x86_64 Python under Rosetta and other operating systems before changing a
-profile. Binary Ninja must also run natively, without Rosetta.
+Run with native arm64 Python on Apple Silicon macOS 13.0 or newer. Installation
+rejects Intel Macs, x86_64 Python under Rosetta, other operating systems and macOS
+versions below 13.0 (or an unreadable version) before changing a profile. Binary Ninja must also run natively, without Rosetta.
 
 Close Binary Ninja first. Choose an explicit user profile, preferably a disposable
 one for initial validation:

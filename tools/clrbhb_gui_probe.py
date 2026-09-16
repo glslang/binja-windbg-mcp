@@ -42,11 +42,15 @@ def decoded_clrbhb(row):
 def endpoint_analysis_complete(row):
     function = row.get("function", {})
     instructions = function.get("instructions", [])
+    address = int(row["address"], 16)
     return (
         function.get("found") is True
         and not function.get("instructions_truncated")
-        and any(int(i["address"], 16) == int(row["address"], 16) + 4 for i in instructions)
-        and any("SystemHintOp_CLRBHB" in i for i in function.get("llil", []))
+        and [(int(i["address"], 16), i["length"]) for i in instructions]
+        == [(address + offset, 4) for offset in (0, 4, 8)]
+        and [[int(start, 16), int(end, 16)] for start, end in function.get("bounds", [])]
+        == [[address, address + 12]]
+        and any("SystemHintOp_CLRBHB" in i for i in (function.get("llil") or []))
     )
 
 

@@ -35,6 +35,7 @@ def inputs(tmp_path, monkeypatch):
     monkeypatch.setattr(builder, "stopped", lambda: None)
     monkeypatch.setattr(builder.platform, "system", lambda: "Darwin")
     monkeypatch.setattr(builder.platform, "machine", lambda: "arm64")
+    monkeypatch.setattr(builder.platform, "mac_ver", lambda: ("13.0", ("", "", ""), "arm64"))
     return package, tmp_path / "profile", installation
 
 
@@ -272,3 +273,30 @@ def test_rebuild_uses_verified_archives_and_fresh_sources(inputs, monkeypatch, t
     with pytest.raises(ValueError, match="source archive hash mismatch"):
         builder.build(args)
     assert len(sources) == 2  # Refused before invoking the compiler.
+
+
+@pytest.mark.parametrize("release", ["11.0", "12.7.6", "", "unknown", "13.bad"])
+@pytest.mark.parametrize("existing", [False, True])
+def test_unsupported_macos_leaves_profile_unchanged(inputs, monkeypatch, release, existing):
+    package, profile, installation = inputs
+    monkeypatch.setattr(builder.platform, "mac_ver", lambda: (release, (), "arm64"))
+    if existing:
+        profile.mkdir()
+        (profile / "settings.json").write_text('{"unrelated": true}\n')
+    with pytest.raises(ValueError, match="macOS"):
+        builder.install(package, profile, installation)
+    if existing:
+        assert list(profile.iterdir()) == [profile / "settings.json"]
+        assert (profile / "settings.json").read_text() == '{"unrelated": true}\n'
+    else:
+        assert not profile.exists()
+
+
+@pytest.mark.parametrize("release", ["13.0", "13.6.9", "14.0", "26.0"])
+def test_minimum_and_newer_macos_allow_install(inputs, monkeypatch, release):
+    package, profile, installation = inputs
+    monkeypatch.setattr(builder.platform, "mac_ver", lambda: (release, (), "arm64"))
+    builder.install(package, profile, installation)
+    assert (profile / "plugins" / builder.PLUGIN).read_bytes() == b"test-library"
+    assert json.loads((profile / "settings.json").read_text())[builder.SETTING] is False
+    builder.uninstall(profile)

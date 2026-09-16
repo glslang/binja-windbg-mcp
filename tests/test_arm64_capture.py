@@ -89,6 +89,8 @@ def test_retained_capture_has_all_expected_pairs():
     report = json.loads(gzip.decompress(source.read_bytes()))
     selected = gui.endpoint_matches(report["capture"]["comparison"]["matches"])
     assert len(selected) == 8
+    endpoints = report["capture"]["endpoints"]
+    assert len(endpoints) == 16 and all(gui.endpoint_analysis_complete(row) for row in endpoints)
 
 
 @pytest.mark.parametrize("checkout_change", ["edited", "removed"])
@@ -128,3 +130,50 @@ sys.modules["PySide6.QtCore"] = SimpleNamespace(QTimer=SimpleNamespace(singleSho
     assert hashes["probe_sha256"] == hashlib.sha256(original).hexdigest()
     assert hashes["launcher_sha256"] == hashlib.sha256(b"original launcher").hexdigest()
     assert (output / "sources/clrbhb_gui_probe.py").read_bytes() == original
+
+
+@pytest.mark.parametrize(
+    "fault",
+    [
+        None,
+        "missing_branch",
+        "missing_middle",
+        "wrong_length",
+        "wrong_address",
+        "extra_instruction",
+        "short_bounds",
+        "extra_block",
+        "truncated",
+        "missing_il",
+    ],
+)
+def test_endpoint_analysis_requires_three_instructions_and_exact_bounds(fault):
+    instructions = [{"address": hex(0x1000 + offset), "length": 4} for offset in (0, 4, 8)]
+    function = {
+        "found": True,
+        "instructions": instructions,
+        "instructions_truncated": False,
+        "bounds": [["0x1000", "0x100c"]],
+        "llil": ["SystemHintOp_CLRBHB()"],
+    }
+    if fault == "missing_branch":
+        instructions.pop()
+    elif fault == "missing_middle":
+        instructions.pop(1)
+    elif fault == "wrong_length":
+        instructions[2]["length"] = 2
+    elif fault == "wrong_address":
+        instructions[2]["address"] = "0x100c"
+    elif fault == "extra_instruction":
+        instructions.append({"address": "0x100c", "length": 4})
+    elif fault == "short_bounds":
+        function["bounds"][0][1] = "0x1008"
+    elif fault == "extra_block":
+        function["bounds"].append(["0x2000", "0x2004"])
+    elif fault == "truncated":
+        function["instructions_truncated"] = True
+    elif fault == "missing_il":
+        function["llil"] = None
+    assert gui.endpoint_analysis_complete({"address": "0x1000", "function": function}) is (
+        fault is None
+    )

@@ -19,6 +19,7 @@ FMT_SHA256 = "15b7d9723d16e6ecbf83438a1611a2910879eaa5bc8d0e0fd8197c2f18f993be"
 SETTING = "corePlugins.architectures.aarch64"
 PLUGIN = "libarch_arm64.dylib"
 RECEIPT = "clrbhb-install.json"
+MINIMUM_MACOS = "13.0"
 
 
 def digest(path):
@@ -28,6 +29,11 @@ def digest(path):
 def supported_host():
     if platform.system() != "Darwin" or platform.machine() != "arm64":
         raise ValueError("this package requires native arm64 Python on Apple Silicon macOS")
+    release = platform.mac_ver()[0]
+    if not re.fullmatch(r"[0-9]+\.[0-9]+(?:\.[0-9]+)?", release):
+        raise ValueError("cannot determine the macOS version")
+    if tuple(map(int, release.split(".")[:2])) < tuple(map(int, MINIMUM_MACOS.split("."))):
+        raise ValueError(f"this package requires macOS {MINIMUM_MACOS} or newer")
 
 
 def compatible(installation):
@@ -199,7 +205,7 @@ def compile_package(args, root, work, sdk, marker):
             str(work / "build"),
             "-DCMAKE_BUILD_TYPE=Release",
             "-DHEADLESS=ON",
-            "-DCMAKE_OSX_DEPLOYMENT_TARGET=13.0",
+            f"-DCMAKE_OSX_DEPLOYMENT_TARGET={MINIMUM_MACOS}",
             f"-DBN_INSTALL_DIR={args.bn_install.resolve()}",
         ],
         check=True,
@@ -219,7 +225,7 @@ def compile_package(args, root, work, sdk, marker):
             **marker,
             "core_abi": 187,
             "platform": "macos-arm64",
-            "minimum_macos": "13.0",
+            "minimum_macos": MINIMUM_MACOS,
             "plugin": PLUGIN,
             "plugin_sha256": digest(package / PLUGIN),
             "sdk_archive_sha256": SDK_SHA256,
