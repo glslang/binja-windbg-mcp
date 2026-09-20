@@ -34,9 +34,11 @@ point directly to the checkout; no copy or pip command is required.
 
 Binary Ninja's plugin directory and, once accepted, the Extension Manager are the only
 distribution channels. The companion is not published to the
-[MCP registry](https://registry.modelcontextprotocol.io): a registry entry describes a server
-that an MCP host installs and launches, while this listener exists only inside a running
-Binary Ninja. Hosts configure it by endpoint and token instead, as described below.
+[MCP registry](https://registry.modelcontextprotocol.io). A registry entry names either a
+package that the host installs and launches, which cannot start a listener that lives inside
+Binary Ninja, or a remote endpoint, which the registry requires to be publicly reachable over
+HTTPS rather than a per-user loopback address with a locally generated token. Hosts configure
+this companion by endpoint and token instead, as described below.
 
 For these manual installs, the companion checks dependencies on startup and installs
 missing packages through Binary Ninja's own Python module installer in a background task.
