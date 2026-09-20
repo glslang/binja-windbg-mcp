@@ -3,7 +3,7 @@
 A focused companion to **Binary Ninja 6 native MCP**, targeting Personal on Apple Silicon
 macOS and its Python 3.13 interpreter. Native MCP handles general inspection and editing.
 This plugin adds PE identity/RVA coordinates, structured driver evidence, and optional
-WinDbg following and focused actions. It uses the **official MCP Python SDK 2.1.1**.
+WinDbg following and focused actions. It uses the **official MCP Python SDK 2.2.0**.
 
 The optional [binary similarity tools](docs/similarity.md) compare two open PE builds
 using external BinDiff on Personal or native BinDiff/WARP on Ultimate, and return
@@ -31,6 +31,12 @@ from the included `requirements.txt`. This repository is not yet published in th
 For a local checkout, put the repository (or a symlink named `binja-windbg-mcp`) in
 Binary Ninja's per-user `plugins` directory, then restart Binary Ninja. Your symlink can
 point directly to the checkout; no copy or pip command is required.
+
+Binary Ninja's plugin directory and, once accepted, the Extension Manager are the only
+distribution channels. The companion is not published to the
+[MCP registry](https://registry.modelcontextprotocol.io): a registry entry describes a server
+that an MCP host installs and launches, while this listener exists only inside a running
+Binary Ninja. Hosts configure it by endpoint and token instead, as described below.
 
 For these manual installs, the companion checks dependencies on startup and installs
 missing packages through Binary Ninja's own Python module installer in a background task.
