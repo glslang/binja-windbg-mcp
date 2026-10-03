@@ -36,7 +36,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           token: ${{ secrets.RUNTIME_DEPS_TOKEN }}
-      - uses: astral-sh/setup-uv@v10.1.0
+      - uses: astral-sh/setup-uv@v10.2.0
         with:
           enable-cache: true
 
