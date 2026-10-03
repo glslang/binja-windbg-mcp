@@ -449,6 +449,35 @@ def _op(node):
     return getattr(getattr(node, "operation", None), "name", "")
 
 
+def _conditional_compare(view, function, address):
+    """Whether the instruction at `address` is A64's conditional compare.
+
+    `ccmp`/`ccmn` compares only when the condition it carries holds and writes the literal
+    `nzcv` otherwise, so several of them feed **one** branch -- which is how a compiler writes
+    `code == A || code == B || code == C`. Binary Ninja lifts each link into a flag variable
+    and a branch on that variable, which leaves a plain `code == K` condition sitting on the
+    **`ccmp`'s own address**, with arms that are the chain's forced states rather than the
+    routine's cases.
+
+    Measured on `rdyboost.sys` 10.0.26100.1 (SHA-256 `d872cff7...`) with Binary Ninja
+    6.0.10601 Personal, dispatch at `0xf6a0`: for
+    `cmp w8,w11` / `ccmp w8,w12,#4,ne` / `ccmp w8,w10,#4,ne` / `b.eq`, the `HLIL_IF` at the
+    first `ccmp` carries `x8 != 0x56c008` and the handler is three links further on; for
+    `cmp w8,#0` / `ccmp w8,w10,#0,ne` / `b.ne`, the one at the `ccmp` carries `x8 != 0` --
+    whose `false` arm is the code the routine **rejects**.
+    """
+    read = getattr(view, "read", None)
+    arch = getattr(function, "arch", None) or getattr(view, "arch", None)
+    if read is None or arch is None:
+        return False
+    try:
+        decoded = arch.get_instruction_text(read(address, arch.max_instr_length), address)
+    except Exception:
+        return False
+    tokens = decoded[0] if decoded else None
+    return bool(tokens) and str(tokens[0]).strip().lower() in ("ccmp", "ccmn")
+
+
 def _constant(node):
     if _op(node) in ("MLIL_CONST", "MLIL_CONST_PTR", "HLIL_CONST", "HLIL_CONST_PTR", "HLIL_IMPORT"):
         return node.constant
@@ -836,6 +865,23 @@ def _capture_function(view, function, layouts, budget, ioctl_context=None):
                 else (cond.right, _constant(cond.left))
             )
             if constant is not None and is_control(source):
+                # **A conditional compare's arms are not the routine's cases.** The condition
+                # here belongs to the comparison before this instruction, and what the link
+                # does with it is force a flag; the branch that routes the codes is further
+                # on, over a flag variable this adapter does not model. Publishing either arm
+                # names a code the handler does not take -- on `rdyboost`'s second chain the
+                # `false` arm is the code the routine **rejects** -- so the site is recorded
+                # and nothing is published. glslang/binja-windbg-mcp#14.
+                if _conditional_compare(view, function, node.address):
+                    row["unresolved"].append(
+                        {
+                            "reason": "conditional-compare chain: the comparison feeds a branch "
+                            "through a flag, so neither arm is this code's case",
+                            "site": site,
+                            "code": constant & 0xFFFFFFFF,
+                        }
+                    )
+                    continue
                 body = node.true if _op(cond) == "HLIL_CMP_E" else node.false
                 target, flow = _case_target(
                     body,

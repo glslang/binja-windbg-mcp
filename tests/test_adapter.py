@@ -51,6 +51,55 @@ def test_adapter_recovers_comparison_chain_switch_and_conditional_sizes():
     assert result["control_cases"][0]["site"] == "0x200"
 
 
+def test_adapter_refuses_a_conditional_compare_chain_rather_than_naming_an_arm():
+    """A64 folds `code == A || code == B` into one branch, and neither arm is a case.
+
+    Binary Ninja lifts each `ccmp` into a flag variable and a branch on it, so a plain
+    `code == K` condition ends up on the `ccmp`'s own address -- measured on `rdyboost.sys`
+    10.0.26100.1 with Binary Ninja 6.0.10601, where `cmp w8,#0` / `ccmp w8,w10,#0,ne` /
+    `b.ne` puts `x8 != 0` on the `ccmp` and the `false` arm is the code the routine
+    **rejects**. Publishing it put `0x00000000` in the map (issue 14), so the site is
+    recorded instead and the ordinary comparison beside it still answers.
+    """
+    control = field("Parameters.DeviceIoControl.IoControlCode")
+    chained = node(
+        "HLIL_IF",
+        address=0x1180,
+        condition=node("HLIL_CMP_NE", left=control, right=constant(0)),
+        true=node("HLIL_BLOCK", address=0x1184),
+        false=node("HLIL_BLOCK", address=0x1190),
+    )
+    ordinary = node(
+        "HLIL_IF",
+        address=0x11A0,
+        condition=node("HLIL_CMP_E", left=control, right=constant(0x22E004)),
+        true=node("HLIL_BLOCK", address=0x11B0),
+        false=node("HLIL_BLOCK"),
+    )
+    function = N(
+        start=0x1100,
+        hlil=N(root=node("HLIL_BLOCK", operands=[chained, ordinary])),
+        arch=N(
+            max_instr_length=4,
+            # The one address that decodes as a conditional compare. Binary Ninja's tokens
+            # stringify to their text -- which is how `tools/clrbhb_gui_probe.py` builds an
+            # instruction's text, and how the probe that measured `rdyboost` read it -- so a
+            # plain string is a faithful stand-in for the mnemonic token.
+            get_instruction_text=lambda data, address: (
+                ["ccmp " if address == 0x1180 else "cmp "],
+                4,
+            ),
+        ),
+    )
+    view = N(start=0x1000, read=lambda address, length: b"\x00" * length)
+    result = _capture_function(view, function, {}, Budget())
+
+    assert [case["code"] for case in result["control_cases"]] == [0x22E004]
+    (refused,) = [row for row in result["unresolved"] if "conditional-compare" in row["reason"]]
+    assert refused["site"] == "0x180"
+    assert refused["code"] == 0
+
+
 def test_adapter_retains_unresolved_switch_and_requires_layouts():
     switch = node("HLIL_SWITCH", condition=constant(10), cases=[])
     function = N(start=0x1000, hlil=N(root=switch))
